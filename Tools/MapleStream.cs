@@ -1,20 +1,13 @@
 ﻿using System;
 
-namespace MaplePacketLib2.Crypto {
+namespace MaplePacketLib2.Tools {
+    // Converts a stream of bytes into individual packets
     public class MapleStream {
         private const int DEFAULT_SIZE = 4096;
         private const int HEADER_SIZE = 6;
 
         private byte[] buffer = new byte[DEFAULT_SIZE];
         private int cursor;
-
-        public readonly Func<byte[], byte[]> Encrypt;
-        public readonly Func<byte[], byte[]> Decrypt;
-
-        public MapleStream(uint version, uint iv, uint seqBlock) {
-            Encrypt = MapleCipher.Encryptor(version, iv, seqBlock).Transform;
-            Decrypt = MapleCipher.Decryptor(version, iv, seqBlock).Transform;
-        }
 
         public void Write(byte[] packet) {
             Write(packet, 0, packet.Length);
@@ -40,19 +33,18 @@ namespace MaplePacketLib2.Crypto {
             }
 
             int packetSize = BitConverter.ToInt32(buffer, 2);
-            int expectedDataSize = packetSize + HEADER_SIZE;
-            if (cursor < expectedDataSize) {
+            int bufferSize = HEADER_SIZE + packetSize;
+            if (cursor < bufferSize) {
                 return null;
             }
 
-            byte[] packetBuffer = new byte[HEADER_SIZE + packetSize];
-            Buffer.BlockCopy(buffer, 0, packetBuffer, 0, HEADER_SIZE + packetSize);
-            byte[] result = Decrypt(packetBuffer);
+            byte[] packetBuffer = new byte[bufferSize];
+            Buffer.BlockCopy(buffer, 0, packetBuffer, 0, bufferSize);
 
-            cursor -= expectedDataSize;
-            Buffer.BlockCopy(buffer, expectedDataSize, buffer, 0, cursor);
+            cursor -= bufferSize;
+            Buffer.BlockCopy(buffer, bufferSize, buffer, 0, cursor);
 
-            return result;
+            return packetBuffer;
         }
     }
 }

@@ -49,6 +49,11 @@ namespace MaplePacketLib2.Crypto {
             return cipher;
         }
 
+        // Advances iv to skip packets
+        public void Advance() {
+            iv = Rand32.CrtRand(iv);
+        }
+
         private byte[] Encrypt(byte[] packet) {
             ushort rawSeq = EncodeSeqBase(version, iv);
             Encrypt(packet, encSeq, iv);
