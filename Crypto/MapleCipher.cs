@@ -55,9 +55,9 @@ namespace MaplePacketLib2.Crypto {
             iv = Rand32.CrtRand(iv);
 
             var writer = new PacketWriter(packet.Length + HEADER_SIZE);
-            writer.WriteUShort(rawSeq);
-            writer.WriteInt(packet.Length);
-            writer.WriteBytes(packet);
+            writer.Write(rawSeq);
+            writer.Write(packet.Length);
+            writer.Write(packet);
 
             return writer.Buffer;
         }
@@ -72,16 +72,16 @@ namespace MaplePacketLib2.Crypto {
 
         private byte[] Decrypt(byte[] packet) {
             var reader = new PacketReader(packet);
-            uint rawSeq = reader.ReadUShort();
+            uint rawSeq = reader.Read<ushort>();
             if (DecodeSeqBase(rawSeq, iv) != version) {
-                throw new Exception("Failed to confirm packet header");
+                throw new ArgumentException("Packet has invalid sequence header.");
             }
-            int packetSize = reader.ReadInt();
+            int packetSize = reader.Read<int>();
             if (packet.Length < packetSize + HEADER_SIZE) {
-                throw new ArgumentException("Unable to decrypt packet due to invalid length.");
+                throw new ArgumentException("Packet has invalid length.");
             }
 
-            packet = reader.ReadBytes(packetSize);
+            packet = reader.Read(packetSize);
             Decrypt(packet, decSeq, iv);
             iv = Rand32.CrtRand(iv);
 

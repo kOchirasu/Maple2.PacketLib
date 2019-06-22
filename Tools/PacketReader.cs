@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MaplePacketLib2.Tools {
@@ -20,6 +21,24 @@ namespace MaplePacketLib2.Tools {
             }
         }
 
+        public unsafe T Read<T>() where T : struct {
+            int size = Marshal.SizeOf(typeof(T));
+            CheckLength(size);
+            fixed (byte* ptr = &Buffer[Position]) {
+                T value = (T)Marshal.PtrToStructure((IntPtr)ptr, typeof(T));
+                Position += size;
+                return value;
+            }
+        }
+
+        public byte[] Read(int count) {
+            CheckLength(count);
+            byte[] bytes = new byte[count];
+            System.Buffer.BlockCopy(Buffer, Position, bytes, 0, count);
+            Position += count;
+            return bytes;
+        }
+
         public byte ReadByte() {
             CheckLength(1);
             return Buffer[Position++];
@@ -27,14 +46,6 @@ namespace MaplePacketLib2.Tools {
 
         public bool ReadBool() {
             return ReadByte() != 0;
-        }
-
-        public byte[] ReadBytes(int count) {
-            CheckLength(count);
-            byte[] bytes = new byte[count];
-            System.Buffer.BlockCopy(Buffer, Position, bytes, 0, count);
-            Position += count;
-            return bytes;
         }
 
         public unsafe short ReadShort() {
@@ -50,15 +61,6 @@ namespace MaplePacketLib2.Tools {
             CheckLength(2);
             fixed (byte* ptr = Buffer) {
                 ushort value = *(ushort*)(ptr + Position);
-                Position += 2;
-                return value;
-            }
-        }
-
-        public unsafe short ReadShortBigEndian() {
-            CheckLength(2);
-            fixed (byte* ptr = Buffer) {
-                short value = (short)(*(ptr + Position) << 8 | *(ptr + Position + 1));
                 Position += 2;
                 return value;
             }
@@ -82,18 +84,6 @@ namespace MaplePacketLib2.Tools {
             }
         }
 
-        public unsafe int ReadIntBigEndian() {
-            CheckLength(4);
-            fixed (byte* ptr = Buffer) {
-                int value = *(ptr + Position) << 24
-                          | *(ptr + Position + 1) << 16
-                          | *(ptr + Position + 2) << 8
-                          | *(ptr + Position + 3);
-                Position += 4;
-                return value;
-            }
-        }
-
         public unsafe long ReadLong() {
             CheckLength(8);
             fixed (byte* ptr = Buffer) {
@@ -104,23 +94,23 @@ namespace MaplePacketLib2.Tools {
         }
 
         public string ReadString(int count) {
-            byte[] bytes = ReadBytes(count);
+            byte[] bytes = Read(count);
             return Encoding.UTF8.GetString(bytes);
         }
 
         public string ReadUnicodeString() {
-            short count = ReadShort();
-            byte[] bytes = ReadBytes(count * 2);
+            ushort count = Read<ushort>();
+            byte[] bytes = Read(count * 2);
             return Encoding.Unicode.GetString(bytes);
         }
 
         public string ReadMapleString() {
-            short count = ReadShort();
+            ushort count = Read<ushort>();
             return ReadString(count);
         }
 
         public string ReadHexString(int count) {
-            return ReadBytes(count).ToHexString(' ');
+            return Read(count).ToHexString(' ');
         }
 
         public void Skip(int count) {

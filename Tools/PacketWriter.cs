@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MaplePacketLib2.Tools {
@@ -29,6 +30,21 @@ namespace MaplePacketLib2.Tools {
             Buffer = newBuffer;
         }
 
+        public unsafe void Write<T>(T value) where T : struct {
+            int size = Marshal.SizeOf(typeof(T));
+            EnsureCapacity(size);
+            fixed (byte* ptr = &Buffer[Position]) {
+                Marshal.StructureToPtr(value, (IntPtr)ptr, false);
+                Position += size;
+            }
+        }
+
+        public void Write(params byte[] value) {
+            EnsureCapacity(value.Length);
+            System.Buffer.BlockCopy(value, 0, Buffer, Position, value.Length);
+            Position += value.Length;
+        }
+
         public void WriteBool(bool value) {
             WriteByte(value ? (byte)1 : (byte)0);
         }
@@ -39,12 +55,6 @@ namespace MaplePacketLib2.Tools {
                 *(ptr + Position) = value;
                 ++Position;
             }
-        }
-
-        public void WriteBytes(params byte[] value) {
-            EnsureCapacity(value.Length);
-            System.Buffer.BlockCopy(value, 0, Buffer, Position, value.Length);
-            Position += value.Length;
         }
 
         public unsafe void WriteShort(short value = 0) {
@@ -59,15 +69,6 @@ namespace MaplePacketLib2.Tools {
             EnsureCapacity(2);
             fixed (byte* ptr = Buffer) {
                 *(ushort*)(ptr + Position) = value;
-                Position += 2;
-            }
-        }
-
-        public unsafe void WriteShortBigEndian(short value = 0) {
-            EnsureCapacity(2);
-            fixed (byte* ptr = Buffer) {
-                *(ptr + Position) = (byte)(value >> 8);
-                *(ptr + Position + 1) = (byte)value;
                 Position += 2;
             }
         }
@@ -88,17 +89,6 @@ namespace MaplePacketLib2.Tools {
             }
         }
 
-        public unsafe void WriteIntBigEndian(int value = 0) {
-            EnsureCapacity(4);
-            fixed (byte* ptr = Buffer) {
-                *(ptr + Position) = (byte)(value >> 24);
-                *(ptr + Position + 1) = (byte)(value >> 16);
-                *(ptr + Position + 2) = (byte)(value >> 8);
-                *(ptr + Position + 3) = (byte)value;
-                Position += 4;
-            }
-        }
-
         public unsafe void WriteLong(long value = 0) {
             EnsureCapacity(8);
             fixed (byte* ptr = Buffer) {
@@ -108,12 +98,12 @@ namespace MaplePacketLib2.Tools {
         }
 
         public void Timestamp() {
-            WriteInt(Environment.TickCount);
+            Write(Environment.TickCount);
         }
 
         public void WriteString(string value) {
             byte[] bytes = Encoding.UTF8.GetBytes(value);
-            WriteBytes(bytes);
+            Write(bytes);
         }
 
         public void WritePaddedString(string value, int length, char pad = '\0') {
@@ -124,23 +114,23 @@ namespace MaplePacketLib2.Tools {
         }
 
         public void WriteUnicodeString(string value) {
-            WriteShort((short)value.Length);
+            Write((ushort)value.Length);
             byte[] bytes = Encoding.Unicode.GetBytes(value);
-            WriteBytes(bytes);
+            Write(bytes);
         }
 
         public void WriteMapleString(string value) {
-            WriteShort((short)value.Length);
+            Write((ushort)value.Length);
             WriteString(value);
         }
 
         public void WriteHexString(string value) {
             byte[] bytes = value.ToByteArray();
-            WriteBytes(bytes);
+            Write(bytes);
         }
 
         public void WriteZero(int count) {
-            WriteBytes(new byte[count]);
+            Write(new byte[count]);
         }
 
         public byte[] ToArray() {
