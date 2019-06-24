@@ -19,9 +19,9 @@ namespace MaplePacketLib2.Crypto {
         }
 
         public uint Random() {
-            s1 = ((((s1 >> 6) & 0x3FFFFFF) ^ (s1 << 12)) & 0x1FFF) ^ ((s1 >> 19) & 0x1FFF) ^ (s1 << 12);
-            s2 = ((((s2 >> 23) & 0x1FF) ^ (s2 << 4)) & 0x7F) ^ ((s2 >> 25) & 0x7F) ^ (s2 << 4);
-            s3 = ((((s3 << 17) ^ ((s3 >> 8) & 0xFFFFFF)) & 0x1FFFFF) ^ (s3 << 17)) ^ ((s3 >> 11) & 0x1FFFFF);
+            s1 = ((s1 << 12) & 0xFFFFE000) ^ ((s1 >> 6) & 0x00001FFF) ^ (s1 >> 19);
+            s2 = ((s2 << 4) & 0xFFFFFF80) ^ ((s2 >> 23) & 0x0000007F) ^ (s2 >> 25);
+            s3 = ((s3 << 17) & 0xFFE00000) ^ ((s3 >> 8) & 0x001FFFFF) ^ (s3 >> 11);
 
             return s1 ^ s2 ^ s3;
         }
