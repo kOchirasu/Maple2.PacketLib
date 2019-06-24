@@ -29,12 +29,8 @@ namespace MaplePacketLib2.Crypto {
             crypt = new ICrypter[4];
             crypt[ENCRYPT_NONE] = null;
             crypt[(version + ENCRYPT_REARRANGE) % 3 + 1] = new RearrangeCrypter();
-            crypt[(version + ENCRYPT_XOR) % 3 + 1] = new XORCrypter();
-            crypt[(version + ENCRYPT_TABLE) % 3 + 1] = new TableCrypter();
-
-            for (int i = 3; i > 0; i--) {
-                crypt[i].Init(version);
-            }
+            crypt[(version + ENCRYPT_XOR) % 3 + 1] = new XORCrypter(version);
+            crypt[(version + ENCRYPT_TABLE) % 3 + 1] = new TableCrypter(version);
         }
 
         public static MapleCipher Encryptor(uint version, uint iv, uint seqBlock) {
@@ -56,7 +52,7 @@ namespace MaplePacketLib2.Crypto {
 
         private byte[] Encrypt(byte[] packet) {
             ushort rawSeq = EncodeSeqBase(version, iv);
-            Encrypt(packet, encSeq, iv);
+            Encrypt(packet, encSeq);
             iv = Rand32.CrtRand(iv);
 
             var writer = new PacketWriter(packet.Length + HEADER_SIZE);
@@ -67,10 +63,10 @@ namespace MaplePacketLib2.Crypto {
             return writer.Buffer;
         }
 
-        private void Encrypt(byte[] packet, uint seqBlock, uint seqKey) {
+        private void Encrypt(byte[] packet, uint seqBlock) {
             while (seqBlock > 0) {
                 ICrypter crypter = crypt[seqBlock % 10];
-                crypter?.Encrypt(packet, seqKey);
+                crypter?.Encrypt(packet);
                 seqBlock /= 10;
             }
         }
@@ -87,16 +83,16 @@ namespace MaplePacketLib2.Crypto {
             }
 
             packet = reader.Read(packetSize);
-            Decrypt(packet, decSeq, iv);
+            Decrypt(packet, decSeq);
             iv = Rand32.CrtRand(iv);
 
             return packet;
         }
 
-        private void Decrypt(byte[] packet, uint seqBlock, uint seqKey) {
+        private void Decrypt(byte[] packet, uint seqBlock) {
             while (seqBlock > 0) {
                 ICrypter crypter = crypt[seqBlock % 10];
-                crypter?.Decrypt(packet, seqKey);
+                crypter?.Decrypt(packet);
                 seqBlock /= 10;
             }
         }
