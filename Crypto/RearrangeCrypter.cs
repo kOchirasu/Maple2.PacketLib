@@ -2,6 +2,11 @@
 
     // Reverses the source data
     public class RearrangeCrypter : ICrypter {
+        private const int INDEX = 1;
+
+        public static uint GetIndex(uint version) {
+            return (version + INDEX) % 3 + 1;
+        }
 
         public void Encrypt(byte[] src) {
             int len = src.Length >> 1;

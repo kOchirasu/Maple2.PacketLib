@@ -1,117 +1,108 @@
 ﻿using MaplePacketLib2.Tools;
 using System;
+using System.Collections.Generic;
 
 namespace MaplePacketLib2.Crypto {
     public class MapleCipher {
-        private const int ENCRYPT_NONE = 0;
-        private const int ENCRYPT_REARRANGE = 1;
-        private const int ENCRYPT_XOR = 2;
-        private const int ENCRYPT_TABLE = 3;
         private const int HEADER_SIZE = 6;
 
-        private readonly ICrypter[] crypt;
         private readonly uint version;
-        private readonly uint encSeq;
-        private readonly uint decSeq;
+        private readonly ICrypter[] encryptSeq;
+        private readonly ICrypter[] decryptSeq;
 
         private uint iv;
 
         public Func<byte[], byte[]> Transform { get; private set; }
 
-        private MapleCipher(uint version, uint iv, uint seqBlock) {
+        private MapleCipher(uint version, uint iv, uint blockIV) {
             this.version = version;
             this.iv = iv;
 
-            encSeq = seqBlock;
-            decSeq = ReverseDigits(seqBlock);
-
-            // Initialize Crypter Order
-            crypt = new ICrypter[4];
-            crypt[ENCRYPT_NONE] = null;
-            crypt[(version + ENCRYPT_REARRANGE) % 3 + 1] = new RearrangeCrypter();
-            crypt[(version + ENCRYPT_XOR) % 3 + 1] = new XORCrypter(version);
-            crypt[(version + ENCRYPT_TABLE) % 3 + 1] = new TableCrypter(version);
+            // Initialize Crypter Sequence
+            List<ICrypter> cryptSeq = InitCryptSeq(version, blockIV);
+            encryptSeq = cryptSeq.ToArray();
+            cryptSeq.Reverse();
+            decryptSeq = cryptSeq.ToArray();
         }
 
-        public static MapleCipher Encryptor(uint version, uint iv, uint seqBlock) {
-            var cipher = new MapleCipher(version, iv, seqBlock);
+        public static MapleCipher Encryptor(uint version, uint iv, uint blockIV) {
+            var cipher = new MapleCipher(version, iv, blockIV);
             cipher.Transform = cipher.Encrypt;
             return cipher;
         }
 
-        public static MapleCipher Decryptor(uint version, uint iv, uint seqBlock) {
-            var cipher = new MapleCipher(version, iv, seqBlock);
+        public static MapleCipher Decryptor(uint version, uint iv, uint blockIV) {
+            var cipher = new MapleCipher(version, iv, blockIV);
             cipher.Transform = cipher.Decrypt;
             return cipher;
         }
 
-        // Advances iv to skip packets
-        public void Advance() {
+        public void AdvanceIV() {
             iv = Rand32.CrtRand(iv);
         }
 
+        private static List<ICrypter> InitCryptSeq(uint version, uint blockIV) {
+            ICrypter[] crypt = new ICrypter[4];
+            crypt[RearrangeCrypter.GetIndex(version)] = new RearrangeCrypter();
+            crypt[XORCrypter.GetIndex(version)] = new XORCrypter(version);
+            crypt[TableCrypter.GetIndex(version)] = new TableCrypter(version);
+
+            List<ICrypter> cryptSeq = new List<ICrypter>();
+            while (blockIV > 0) {
+                var crypter = crypt[blockIV % 10];
+                if (crypter != null) {
+                    cryptSeq.Add(crypter);
+                }
+                blockIV /= 10;
+            }
+
+            return cryptSeq;
+        }
+
         private byte[] Encrypt(byte[] packet) {
-            ushort rawSeq = EncodeSeqBase(version, iv);
-            Encrypt(packet, encSeq);
-            iv = Rand32.CrtRand(iv);
+            ushort encSeq = EncodeSeqBase();
+            foreach (var crypter in encryptSeq) {
+                crypter.Encrypt(packet);
+            }
 
             var writer = new PacketWriter(packet.Length + HEADER_SIZE);
-            writer.Write(rawSeq);
+            writer.Write(encSeq);
             writer.Write(packet.Length);
             writer.Write(packet);
 
             return writer.Buffer;
         }
 
-        private void Encrypt(byte[] packet, uint seqBlock) {
-            while (seqBlock > 0) {
-                ICrypter crypter = crypt[seqBlock % 10];
-                crypter?.Encrypt(packet);
-                seqBlock /= 10;
-            }
-        }
-
         private byte[] Decrypt(byte[] packet) {
             var reader = new PacketReader(packet);
-            uint rawSeq = reader.Read<ushort>();
-            if (DecodeSeqBase(rawSeq, iv) != version) {
-                throw new ArgumentException("Packet has invalid sequence header.");
+            ushort encSeq = reader.Read<ushort>();
+            ushort decSeq = DecodeSeqBase(encSeq);
+            if (decSeq != version) {
+                throw new ArgumentException($"Packet has invalid sequence header: {decSeq}");
             }
             int packetSize = reader.Read<int>();
             if (packet.Length < packetSize + HEADER_SIZE) {
-                throw new ArgumentException("Packet has invalid length.");
+                throw new ArgumentException($"Packet has invalid length: {packet.Length}");
             }
 
             packet = reader.Read(packetSize);
-            Decrypt(packet, decSeq);
-            iv = Rand32.CrtRand(iv);
+            foreach (var crypter in decryptSeq) {
+                crypter.Decrypt(packet);
+            }
 
             return packet;
         }
 
-        private void Decrypt(byte[] packet, uint seqBlock) {
-            while (seqBlock > 0) {
-                ICrypter crypter = crypt[seqBlock % 10];
-                crypter?.Decrypt(packet);
-                seqBlock /= 10;
-            }
+        private ushort EncodeSeqBase() {
+            ushort encSeq = (ushort)(version ^ (iv >> 16));
+            AdvanceIV();
+            return encSeq;
         }
 
-        private static uint DecodeSeqBase(uint rawSeq, uint seqKey) {
-            return ((seqKey >> 16) ^ rawSeq);
-        }
-
-        private static ushort EncodeSeqBase(uint version, uint seqKey) {
-            return (ushort)(version ^ (seqKey >> 16));
-        }
-
-        private static uint ReverseDigits(uint n) {
-            uint result = 0;
-            while (n > 0) {
-                result = result * 10 + n % 10;
-                n /= 10;
-            }
-            return result;
+        private ushort DecodeSeqBase(ushort encSeq) {
+            ushort decSeq = (ushort)((iv >> 16) ^ encSeq);
+            AdvanceIV();
+            return decSeq;
         }
     }
 }

@@ -2,6 +2,8 @@
 
 namespace MaplePacketLib2.Crypto {
     public class TableCrypter : ICrypter {
+        private const int INDEX = 3;
+
         private const int TABLE_SIZE = 256;
 
         private readonly byte[] decrypted;
@@ -19,6 +21,10 @@ namespace MaplePacketLib2.Crypto {
             for (int i = 0; i < TABLE_SIZE; i++) {
                 decrypted[encrypted[i]] = (byte)i;
             }
+        }
+
+        public static uint GetIndex(uint version) {
+            return (version + INDEX) % 3 + 1;
         }
 
         public void Encrypt(byte[] src) {
