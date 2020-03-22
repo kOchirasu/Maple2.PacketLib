@@ -3,20 +3,18 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MaplePacketLib2.Tools {
-    public class PacketReader {
-        public byte[] Buffer { get; }
+    public class PacketReader : Packet {
         public int Position { get; private set; }
 
-        public int Available => Buffer.Length - Position;
+        public int Available => Length - Position;
 
-        public PacketReader(byte[] packet, int skip = 0) {
-            Buffer = packet;
-            Position = skip;
+        public PacketReader(byte[] packet, int skip = 0) : base(packet) {
+            this.Position = skip;
         }
 
         private void CheckLength(int length) {
             int index = Position + length;
-            if (index > Buffer.Length || index < Position) {
+            if (index > Length || index < Position) {
                 throw new IndexOutOfRangeException($"Not enough space in packet: {ToString()}\n");
             }
         }
@@ -25,7 +23,7 @@ namespace MaplePacketLib2.Tools {
             int size = Marshal.SizeOf(typeof(T));
             CheckLength(size);
             fixed (byte* ptr = &Buffer[Position]) {
-                T value = (T)Marshal.PtrToStructure((IntPtr)ptr, typeof(T));
+                var value = (T)Marshal.PtrToStructure((IntPtr)ptr, typeof(T));
                 Position += size;
                 return value;
             }
@@ -115,7 +113,7 @@ namespace MaplePacketLib2.Tools {
 
         public void Skip(int count) {
             int index = Position + count;
-            if (index > Buffer.Length || index < 0) { // Allow backwards seeking
+            if (index > Length || index < 0) { // Allow backwards seeking
                 throw new IndexOutOfRangeException($"Not enough space in packet: {ToString()}\n");
             }
             Position += count;
@@ -124,16 +122,6 @@ namespace MaplePacketLib2.Tools {
         public void Next(byte b) {
             int pos = Array.IndexOf(Buffer, b, Position);
             Skip(pos - Position + 1);
-        }
-
-        public byte[] ToArray() {
-            byte[] copy = new byte[Buffer.Length];
-            System.Buffer.BlockCopy(Buffer, 0, copy, 0, Buffer.Length);
-            return copy;
-        }
-
-        public override string ToString() {
-            return Buffer.ToHexString(' ');
         }
     }
 }

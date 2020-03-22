@@ -3,46 +3,44 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MaplePacketLib2.Tools {
-    public class PacketWriter {
+    public class PacketWriter : Packet {
         private const int DEFAULT_SIZE = 64;
-        public byte[] Buffer { get; private set; } // If accessing Buffer, DO NOT MODIFY
-        public int Position { get; private set; } // There is no way to seek so Length = Position
 
-        public PacketWriter(int size = DEFAULT_SIZE) {
-            Buffer = new byte[size];
+        public PacketWriter(int size = DEFAULT_SIZE) : base(new byte[size]) {
+            this.Length = 0;
         }
 
-        public PacketWriter(ushort opcode, int size = DEFAULT_SIZE) {
-            Buffer = new byte[size];
+        public PacketWriter(ushort opcode, int size = DEFAULT_SIZE) : base(new byte[size]) {
+            this.Length = 0;
             WriteUShort(opcode);
         }
 
         private void EnsureCapacity(int length) {
-            if (Position + length <= Buffer.Length) {
+            if (Length + length <= Buffer.Length) {
                 return;
             }
             int newSize = Buffer.Length * 2;
-            while (newSize < Position + length) {
+            while (newSize < Length + length) {
                 newSize *= 2;
             }
             byte[] newBuffer = new byte[newSize];
-            System.Buffer.BlockCopy(Buffer, 0, newBuffer, 0, Position);
+            System.Buffer.BlockCopy(Buffer, 0, newBuffer, 0, Length);
             Buffer = newBuffer;
         }
 
         public unsafe void Write<T>(T value) where T : struct {
             int size = Marshal.SizeOf(typeof(T));
             EnsureCapacity(size);
-            fixed (byte* ptr = &Buffer[Position]) {
+            fixed (byte* ptr = &Buffer[Length]) {
                 Marshal.StructureToPtr(value, (IntPtr)ptr, false);
-                Position += size;
+                Length += size;
             }
         }
 
         public void Write(params byte[] value) {
             EnsureCapacity(value.Length);
-            System.Buffer.BlockCopy(value, 0, Buffer, Position, value.Length);
-            Position += value.Length;
+            System.Buffer.BlockCopy(value, 0, Buffer, Length, value.Length);
+            Length += value.Length;
         }
 
         public void WriteBool(bool value) {
@@ -52,48 +50,48 @@ namespace MaplePacketLib2.Tools {
         public unsafe void WriteByte(byte value = 0) {
             EnsureCapacity(1);
             fixed (byte* ptr = Buffer) {
-                *(ptr + Position) = value;
-                ++Position;
+                *(ptr + Length) = value;
+                ++Length;
             }
         }
 
         public unsafe void WriteShort(short value = 0) {
             EnsureCapacity(2);
             fixed (byte* ptr = Buffer) {
-                *(short*)(ptr + Position) = value;
-                Position += 2;
+                *(short*)(ptr + Length) = value;
+                Length += 2;
             }
         }
 
         public unsafe void WriteUShort(ushort value = 0) {
             EnsureCapacity(2);
             fixed (byte* ptr = Buffer) {
-                *(ushort*)(ptr + Position) = value;
-                Position += 2;
+                *(ushort*)(ptr + Length) = value;
+                Length += 2;
             }
         }
 
         public unsafe void WriteInt(int value = 0) {
             EnsureCapacity(4);
             fixed (byte* ptr = Buffer) {
-                *(int*)(ptr + Position) = value;
-                Position += 4;
+                *(int*)(ptr + Length) = value;
+                Length += 4;
             }
         }
 
         public unsafe void WriteUInt(uint value = 0) {
             EnsureCapacity(4);
             fixed (byte* ptr = Buffer) {
-                *(uint*)(ptr + Position) = value;
-                Position += 4;
+                *(uint*)(ptr + Length) = value;
+                Length += 4;
             }
         }
 
         public unsafe void WriteLong(long value = 0) {
             EnsureCapacity(8);
             fixed (byte* ptr = Buffer) {
-                *(long*)(ptr + Position) = value;
-                Position += 8;
+                *(long*)(ptr + Length) = value;
+                Length += 8;
             }
         }
 
@@ -131,16 +129,6 @@ namespace MaplePacketLib2.Tools {
 
         public void WriteZero(int count) {
             Write(new byte[count]);
-        }
-
-        public byte[] ToArray() {
-            byte[] copy = new byte[Position];
-            System.Buffer.BlockCopy(Buffer, 0, copy, 0, Position);
-            return copy;
-        }
-
-        public override string ToString() {
-            return ToArray().ToHexString(' ');
         }
     }
 }

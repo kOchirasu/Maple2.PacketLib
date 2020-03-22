@@ -106,9 +106,13 @@ namespace MaplePacketLib2.Tools {
             return result;
         }
 
-        public static unsafe string ToHexString(this byte[] bytes, char sep) {
+        public static string ToHexString(this byte[] bytes, char sep) {
+            return ToHexString(bytes, bytes.Length, sep);
+        }
+
+        public static unsafe string ToHexString(this byte[] bytes, int length, char sep) {
             fixed (byte* bytesPtr = bytes) {
-                return ToHexString(bytesPtr, bytes.Length, sep);
+                return ToHexString(bytesPtr, length, sep);
             }
         }
 
