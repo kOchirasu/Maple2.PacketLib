@@ -12,7 +12,7 @@ namespace MaplePacketLib2.Crypto {
 
         private uint iv;
 
-        public Func<byte[], byte[]> Transform { get; private set; }
+        public Func<byte[], Packet> Transform { get; private set; }
 
         private MapleCipher(uint version, uint iv, uint blockIV) {
             this.version = version;
@@ -41,6 +41,31 @@ namespace MaplePacketLib2.Crypto {
             iv = Rand32.CrtRand(iv);
         }
 
+        public Packet WriteHeader(byte[] packet) {
+            ushort encSeq = EncodeSeqBase();
+
+            var writer = new PacketWriter(packet.Length + HEADER_SIZE);
+            writer.Write(encSeq);
+            writer.Write(packet.Length);
+            writer.Write(packet);
+
+            return writer;
+        }
+
+        public int ReadHeader(PacketReader packet) {
+            ushort encSeq = packet.Read<ushort>();
+            ushort decSeq = DecodeSeqBase(encSeq);
+            if (decSeq != version) {
+                throw new ArgumentException($"Packet has invalid sequence header: {decSeq}");
+            }
+            int packetSize = packet.Read<int>();
+            if (packet.Length < packetSize + HEADER_SIZE) {
+                throw new ArgumentException($"Packet has invalid length: {packet.Length}");
+            }
+
+            return packetSize;
+        }
+
         private static List<ICrypter> InitCryptSeq(uint version, uint blockIV) {
             ICrypter[] crypt = new ICrypter[4];
             crypt[RearrangeCrypter.GetIndex(version)] = new RearrangeCrypter();
@@ -59,38 +84,24 @@ namespace MaplePacketLib2.Crypto {
             return cryptSeq;
         }
 
-        private byte[] Encrypt(byte[] packet) {
-            ushort encSeq = EncodeSeqBase();
-            foreach (var crypter in encryptSeq) {
+        private Packet Encrypt(byte[] packet) {
+            foreach (ICrypter crypter in encryptSeq) {
                 crypter.Encrypt(packet);
             }
 
-            var writer = new PacketWriter(packet.Length + HEADER_SIZE);
-            writer.Write(encSeq);
-            writer.Write(packet.Length);
-            writer.Write(packet);
-
-            return writer.Buffer;
+            return WriteHeader(packet);
         }
 
-        private byte[] Decrypt(byte[] packet) {
+        private Packet Decrypt(byte[] packet) {
             var reader = new PacketReader(packet);
-            ushort encSeq = reader.Read<ushort>();
-            ushort decSeq = DecodeSeqBase(encSeq);
-            if (decSeq != version) {
-                throw new ArgumentException($"Packet has invalid sequence header: {decSeq}");
-            }
-            int packetSize = reader.Read<int>();
-            if (packet.Length < packetSize + HEADER_SIZE) {
-                throw new ArgumentException($"Packet has invalid length: {packet.Length}");
-            }
+            int packetSize = ReadHeader(reader);
 
             packet = reader.Read(packetSize);
-            foreach (var crypter in decryptSeq) {
+            foreach (ICrypter crypter in decryptSeq) {
                 crypter.Decrypt(packet);
             }
 
-            return packet;
+            return new Packet(packet);
         }
 
         private ushort EncodeSeqBase() {
