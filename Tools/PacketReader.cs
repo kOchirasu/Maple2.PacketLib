@@ -91,14 +91,18 @@ namespace MaplePacketLib2.Tools {
             }
         }
 
-        public string ReadString(int count) {
-            byte[] bytes = Read(count);
+        public string ReadString(int length) {
+            byte[] bytes = Read(length);
             return Encoding.UTF8.GetString(bytes);
         }
 
         public string ReadUnicodeString() {
-            ushort count = Read<ushort>();
-            byte[] bytes = Read(count * 2);
+            ushort length = Read<ushort>();
+            return ReadUnicodeString(length);
+        }
+
+        public string ReadUnicodeString(int length) {
+            byte[] bytes = Read(length * 2);
             return Encoding.Unicode.GetString(bytes);
         }
 
@@ -107,8 +111,8 @@ namespace MaplePacketLib2.Tools {
             return ReadString(count);
         }
 
-        public string ReadHexString(int count) {
-            return Read(count).ToHexString(' ');
+        public string ReadHexString(int length) {
+            return Read(length).ToHexString(' ');
         }
 
         public void Skip(int count) {

@@ -10,9 +10,10 @@ namespace MaplePacketLib2.Tools {
             this.Length = 0;
         }
 
-        public PacketWriter(ushort opcode, int size = DEFAULT_SIZE) : base(new byte[size]) {
-            this.Length = 0;
-            WriteUShort(opcode);
+        public static PacketWriter Of(ushort opcode, int size = DEFAULT_SIZE) {
+            var packet = new PacketWriter(size);
+            packet.WriteUShort(opcode);
+            return packet;
         }
 
         private void EnsureCapacity(int length) {
