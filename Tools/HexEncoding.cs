@@ -117,6 +117,10 @@ namespace MaplePacketLib2.Tools {
         }
 
         public static unsafe string ToHexString(byte* bytes, int length, char sep) {
+            if (length <= 0) {
+                return string.Empty;
+            }
+
             string result = new string(sep, length * 3 - 1);
             fixed (char* resultPtr = result)
             fixed (uint* lookupPtr = hexLookup) {
