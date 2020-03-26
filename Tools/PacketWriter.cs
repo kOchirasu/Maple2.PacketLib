@@ -29,107 +29,121 @@ namespace MaplePacketLib2.Tools {
             Buffer = newBuffer;
         }
 
-        public unsafe void Write<T>(T value) where T : struct {
+        public unsafe PacketWriter Write<T>(T value) where T : struct {
             int size = Marshal.SizeOf(typeof(T));
             EnsureCapacity(size);
             fixed (byte* ptr = &Buffer[Length]) {
                 Marshal.StructureToPtr(value, (IntPtr)ptr, false);
                 Length += size;
             }
+
+            return this;
         }
 
-        public void Write(params byte[] value) {
+        public PacketWriter Write(params byte[] value) {
             EnsureCapacity(value.Length);
             System.Buffer.BlockCopy(value, 0, Buffer, Length, value.Length);
             Length += value.Length;
+
+            return this;
         }
 
-        public void WriteBool(bool value) {
-            WriteByte(value ? (byte)1 : (byte)0);
+        public PacketWriter WriteBool(bool value) {
+            return WriteByte(value ? (byte)1 : (byte)0);
         }
 
-        public unsafe void WriteByte(byte value = 0) {
+        public unsafe PacketWriter WriteByte(byte value = 0) {
             EnsureCapacity(1);
             fixed (byte* ptr = Buffer) {
                 *(ptr + Length) = value;
                 ++Length;
             }
+
+            return this;
         }
 
-        public unsafe void WriteShort(short value = 0) {
+        public unsafe PacketWriter WriteShort(short value = 0) {
             EnsureCapacity(2);
             fixed (byte* ptr = Buffer) {
                 *(short*)(ptr + Length) = value;
                 Length += 2;
             }
+
+            return this;
         }
 
-        public unsafe void WriteUShort(ushort value = 0) {
+        public unsafe PacketWriter WriteUShort(ushort value = 0) {
             EnsureCapacity(2);
             fixed (byte* ptr = Buffer) {
                 *(ushort*)(ptr + Length) = value;
                 Length += 2;
             }
+
+            return this;
         }
 
-        public unsafe void WriteInt(int value = 0) {
+        public unsafe PacketWriter WriteInt(int value = 0) {
             EnsureCapacity(4);
             fixed (byte* ptr = Buffer) {
                 *(int*)(ptr + Length) = value;
                 Length += 4;
             }
+
+            return this;
         }
 
-        public unsafe void WriteUInt(uint value = 0) {
+        public unsafe PacketWriter WriteUInt(uint value = 0) {
             EnsureCapacity(4);
             fixed (byte* ptr = Buffer) {
                 *(uint*)(ptr + Length) = value;
                 Length += 4;
             }
+
+            return this;
         }
 
-        public unsafe void WriteLong(long value = 0) {
+        public unsafe PacketWriter WriteLong(long value = 0) {
             EnsureCapacity(8);
             fixed (byte* ptr = Buffer) {
                 *(long*)(ptr + Length) = value;
                 Length += 8;
             }
+
+            return this;
         }
 
-        public void Timestamp() {
-            Write(Environment.TickCount);
-        }
-
-        public void WriteString(string value) {
+        public PacketWriter WriteString(string value) {
             byte[] bytes = Encoding.UTF8.GetBytes(value);
-            Write(bytes);
+            return Write(bytes);
         }
 
-        public void WritePaddedString(string value, int length, char pad = '\0') {
+        public PacketWriter WritePaddedString(string value, int length, char pad = '\0') {
             WriteString(value);
             for (int i = value.Length; i < length; i++) {
                 WriteByte((byte)pad);
             }
+
+            return this;
         }
 
-        public void WriteUnicodeString(string value) {
+        public PacketWriter WriteUnicodeString(string value) {
             Write((ushort)value.Length);
             byte[] bytes = Encoding.Unicode.GetBytes(value);
-            Write(bytes);
+            return Write(bytes);
         }
 
-        public void WriteMapleString(string value) {
+        public PacketWriter WriteMapleString(string value) {
             Write((ushort)value.Length);
-            WriteString(value);
+            return WriteString(value);
         }
 
-        public void WriteHexString(string value) {
+        public PacketWriter WriteHexString(string value) {
             byte[] bytes = value.ToByteArray();
-            Write(bytes);
+            return Write(bytes);
         }
 
-        public void WriteZero(int count) {
-            Write(new byte[count]);
+        public PacketWriter WriteZero(int count) {
+            return Write(new byte[count]);
         }
     }
 }
