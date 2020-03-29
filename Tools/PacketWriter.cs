@@ -112,6 +112,16 @@ namespace MaplePacketLib2.Tools {
             return this;
         }
 
+        public unsafe PacketWriter WriteULong(ulong value = 0) {
+            EnsureCapacity(8);
+            fixed (byte* ptr = Buffer) {
+                *(ulong*)(ptr + Length) = value;
+                Length += 8;
+            }
+
+            return this;
+        }
+
         public PacketWriter WriteString(string value) {
             byte[] bytes = Encoding.UTF8.GetBytes(value);
             return Write(bytes);
