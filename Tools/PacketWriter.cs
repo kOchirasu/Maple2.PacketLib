@@ -6,6 +6,8 @@ namespace MaplePacketLib2.Tools {
     public class PacketWriter : Packet {
         private const int DEFAULT_SIZE = 64;
 
+        public int Remaining => Buffer.Length - Length;
+
         public PacketWriter(int size = DEFAULT_SIZE) : base(new byte[size]) {
             this.Length = 0;
         }
@@ -17,16 +19,28 @@ namespace MaplePacketLib2.Tools {
         }
 
         private void EnsureCapacity(int length) {
-            if (Length + length <= Buffer.Length) {
+            if (length <= Remaining) {
                 return;
             }
             int newSize = Buffer.Length * 2;
             while (newSize < Length + length) {
                 newSize *= 2;
             }
+            ResizeBuffer(newSize);
+        }
+
+        public void ResizeBuffer(int newSize) {
             byte[] newBuffer = new byte[newSize];
             System.Buffer.BlockCopy(Buffer, 0, newBuffer, 0, Length);
             Buffer = newBuffer;
+        }
+
+        public void Seek(int position) {
+            if (position < 0 || position > Buffer.Length) {
+                return;
+            }
+
+            Length = position;
         }
 
         public unsafe PacketWriter Write<T>(T value) where T : struct {
