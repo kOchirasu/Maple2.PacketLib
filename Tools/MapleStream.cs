@@ -27,24 +27,26 @@ namespace MaplePacketLib2.Tools {
             cursor += length;
         }
 
-        public byte[] Read() {
+        public bool TryRead(out byte[] packet) {
             if (cursor < HEADER_SIZE) {
-                return null;
+                packet = null;
+                return false;
             }
 
             int packetSize = BitConverter.ToInt32(buffer, 2);
             int bufferSize = HEADER_SIZE + packetSize;
             if (cursor < bufferSize) {
-                return null;
+                packet = null;
+                return false;
             }
 
-            byte[] packetBuffer = new byte[bufferSize];
-            Buffer.BlockCopy(buffer, 0, packetBuffer, 0, bufferSize);
+            packet = new byte[bufferSize];
+            Buffer.BlockCopy(buffer, 0, packet, 0, bufferSize);
 
             cursor -= bufferSize;
             Buffer.BlockCopy(buffer, bufferSize, buffer, 0, cursor);
 
-            return packetBuffer;
+            return true;
         }
     }
 }
