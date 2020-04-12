@@ -136,13 +136,13 @@ namespace MaplePacketLib2.Tools {
             return this;
         }
 
-        public PacketWriter WriteString(string value) {
+        public PacketWriter WriteRawString(string value) {
             byte[] bytes = Encoding.UTF8.GetBytes(value);
             return Write(bytes);
         }
 
         public PacketWriter WritePaddedString(string value, int length, char pad = '\0') {
-            WriteString(value);
+            WriteRawString(value);
             for (int i = value.Length; i < length; i++) {
                 WriteByte((byte)pad);
             }
@@ -156,9 +156,9 @@ namespace MaplePacketLib2.Tools {
             return Write(bytes);
         }
 
-        public PacketWriter WriteMapleString(string value) {
+        public PacketWriter WriteString(string value) {
             Write((ushort)value.Length);
-            return WriteString(value);
+            return WriteRawString(value);
         }
 
         public PacketWriter WriteHexString(string value) {
