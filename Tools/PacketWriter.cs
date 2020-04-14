@@ -54,10 +54,14 @@ namespace MaplePacketLib2.Tools {
             return this;
         }
 
-        public PacketWriter Write(params byte[] value) {
-            EnsureCapacity(value.Length);
-            System.Buffer.BlockCopy(value, 0, Buffer, Length, value.Length);
-            Length += value.Length;
+        public PacketWriter WriteBytes(byte[] value) {
+            return WriteBytes(value, 0, value.Length);
+        }
+
+        public PacketWriter WriteBytes(byte[] value, int offset, int length) {
+            EnsureCapacity(length);
+            System.Buffer.BlockCopy(value, offset, Buffer, Length, length);
+            Length += length;
 
             return this;
         }
@@ -138,7 +142,7 @@ namespace MaplePacketLib2.Tools {
 
         public PacketWriter WriteRawString(string value) {
             byte[] bytes = Encoding.UTF8.GetBytes(value);
-            return Write(bytes);
+            return WriteBytes(bytes);
         }
 
         public PacketWriter WritePaddedString(string value, int length, char pad = '\0') {
@@ -151,23 +155,23 @@ namespace MaplePacketLib2.Tools {
         }
 
         public PacketWriter WriteUnicodeString(string value) {
-            Write((ushort)value.Length);
+            WriteUShort((ushort)value.Length);
             byte[] bytes = Encoding.Unicode.GetBytes(value);
-            return Write(bytes);
+            return WriteBytes(bytes);
         }
 
         public PacketWriter WriteString(string value) {
-            Write((ushort)value.Length);
+            WriteUShort((ushort)value.Length);
             return WriteRawString(value);
         }
 
         public PacketWriter WriteHexString(string value) {
             byte[] bytes = value.ToByteArray();
-            return Write(bytes);
+            return WriteBytes(bytes);
         }
 
         public PacketWriter WriteZero(int count) {
-            return Write(new byte[count]);
+            return WriteBytes(new byte[count]);
         }
     }
 }

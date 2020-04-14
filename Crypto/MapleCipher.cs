@@ -47,7 +47,7 @@ namespace MaplePacketLib2.Crypto {
             var writer = new PacketWriter(packet.Length + HEADER_SIZE);
             writer.Write(encSeq);
             writer.Write(packet.Length);
-            writer.Write(packet);
+            writer.WriteBytes(packet);
 
             return writer;
         }
