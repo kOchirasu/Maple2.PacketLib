@@ -43,7 +43,7 @@ namespace MaplePacketLib2.Tools {
             Length = position;
         }
 
-        public unsafe PacketWriter Write<T>(T value) where T : struct {
+        public unsafe PacketWriter Write<T>(in T value) where T : struct {
             int size = Marshal.SizeOf(typeof(T));
             EnsureCapacity(size);
             fixed (byte* ptr = &Buffer[Length]) {
