@@ -12,7 +12,7 @@ namespace MaplePacketLib2.Crypto {
 
         private uint iv;
 
-        public Func<byte[], Packet> Transform { get; private set; }
+        public Func<byte[], int, int, Packet> Transform { get; private set; }
 
         private MapleCipher(uint version, uint iv, uint blockIV) {
             this.version = version;
@@ -45,20 +45,20 @@ namespace MaplePacketLib2.Crypto {
             ushort encSeq = EncodeSeqBase();
 
             var writer = new PacketWriter(packet.Length + HEADER_SIZE);
-            writer.Write(encSeq);
-            writer.Write(packet.Length);
+            writer.WriteUShort(encSeq);
+            writer.WriteInt(packet.Length);
             writer.WriteBytes(packet);
 
             return writer;
         }
 
         public int ReadHeader(PacketReader packet) {
-            ushort encSeq = packet.Read<ushort>();
+            ushort encSeq = packet.ReadUShort();
             ushort decSeq = DecodeSeqBase(encSeq);
             if (decSeq != version) {
                 throw new ArgumentException($"Packet has invalid sequence header: {decSeq}");
             }
-            int packetSize = packet.Read<int>();
+            int packetSize = packet.ReadInt();
             if (packet.Length < packetSize + HEADER_SIZE) {
                 throw new ArgumentException($"Packet has invalid length: {packet.Length}");
             }
@@ -84,7 +84,7 @@ namespace MaplePacketLib2.Crypto {
             return cryptSeq;
         }
 
-        private Packet Encrypt(byte[] packet) {
+        private Packet Encrypt(byte[] packet, int offset, int length) {
             foreach (ICrypter crypter in encryptSeq) {
                 crypter.Encrypt(packet);
             }
@@ -92,13 +92,12 @@ namespace MaplePacketLib2.Crypto {
             return WriteHeader(packet);
         }
 
-        private Packet Decrypt(byte[] packet) {
+        private Packet Decrypt(byte[] packet, int offset, int length) {
             var reader = new PacketReader(packet);
             int packetSize = ReadHeader(reader);
 
-            packet = reader.Read(packetSize);
             foreach (ICrypter crypter in decryptSeq) {
-                crypter.Decrypt(packet);
+                crypter.Decrypt(packet, HEADER_SIZE, packetSize);
             }
 
             return new Packet(packet);

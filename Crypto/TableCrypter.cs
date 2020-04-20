@@ -28,13 +28,21 @@ namespace MaplePacketLib2.Crypto {
         }
 
         public void Encrypt(byte[] src) {
-            for (int i = 0; i < src.Length; i++) {
+            Encrypt(src, 0, src.Length);
+        }
+
+        public void Encrypt(byte[] src, int offset, int count) {
+            for (int i = offset; i < count; i++) {
                 src[i] = encrypted[src[i]];
             }
         }
 
         public void Decrypt(byte[] src) {
-            for (int i = 0; i < src.Length; i++) {
+            Decrypt(src, 0, src.Length);
+        }
+
+        public void Decrypt(byte[] src, int offset, int count) {
+            for (int i = offset; i < count; i++) {
                 src[i] = decrypted[src[i]];
             }
         }

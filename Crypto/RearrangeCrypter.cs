@@ -9,8 +9,12 @@
         }
 
         public void Encrypt(byte[] src) {
-            int len = src.Length >> 1;
-            for (int i = 0; i < len; i++) {
+            Encrypt(src, 0, src.Length);
+        }
+
+        public void Encrypt(byte[] src, int offset, int count) {
+            int len = count >> 1;
+            for (int i = offset; i < len; i++) {
                 byte swap = src[i];
                 src[i] = src[i + len];
                 src[i + len] = swap;
@@ -18,8 +22,12 @@
         }
 
         public void Decrypt(byte[] src) {
-            int len = src.Length >> 1;
-            for (int i = 0; i < len; i++) {
+            Decrypt(src, 0, src.Length);
+        }
+
+        public void Decrypt(byte[] src, int offset, int count) {
+            int len = count >> 1;
+            for (int i = offset; i < len; i++) {
                 byte swap = src[i];
                 src[i] = src[i + len];
                 src[i + len] = swap;
