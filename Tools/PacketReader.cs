@@ -91,24 +91,24 @@ namespace MaplePacketLib2.Tools {
             }
         }
 
-        public string ReadString(int length) {
+        public string ReadRawString(int length) {
             byte[] bytes = Read(length);
             return Encoding.UTF8.GetString(bytes);
         }
 
         public string ReadUnicodeString() {
             ushort length = Read<ushort>();
-            return ReadUnicodeString(length);
+            return ReadRawUnicodeString(length);
         }
 
-        public string ReadUnicodeString(int length) {
+        public string ReadRawUnicodeString(int length) {
             byte[] bytes = Read(length * 2);
             return Encoding.Unicode.GetString(bytes);
         }
 
-        public string ReadMapleString() {
+        public string ReadString() {
             ushort count = Read<ushort>();
-            return ReadString(count);
+            return ReadRawString(count);
         }
 
         public string ReadHexString(int length) {
