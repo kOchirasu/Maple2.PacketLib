@@ -8,8 +8,8 @@ namespace MaplePacketLib2.Tools {
 
         public int Available => Length - Position;
 
-        public PacketReader(byte[] packet, int skip = 0) : base(packet) {
-            this.Position = skip;
+        public PacketReader(byte[] packet, int offset = 0) : base(packet) {
+            this.Position = offset;
         }
 
         private void CheckLength(int length) {
@@ -118,14 +118,9 @@ namespace MaplePacketLib2.Tools {
         public void Skip(int count) {
             int index = Position + count;
             if (index > Length || index < 0) { // Allow backwards seeking
-                throw new IndexOutOfRangeException($"Not enough space in packet: {ToString()}\n");
+                throw new IndexOutOfRangeException($"Not enough space in packet: {this}\n");
             }
             Position += count;
-        }
-
-        public void Next(byte b) {
-            int pos = Array.IndexOf(Buffer, b, Position);
-            Skip(pos - Position + 1);
         }
     }
 }

@@ -11,32 +11,31 @@ Credits to [@EricSoftTM](https://github.com/EricSoftTM) for packet encryption al
 
 Sending Packets
 ```C#
-var sendCipher = MapleCipher.Encryptor(VERSION, SIV, BLOCK_IV);
+var sendCipher = new MapleCipher.Encryptor(VERSION, SIV, BLOCK_IV);
 ...
 // Handshake is NOT encrypted
 PacketWriter writer = PacketWriter.Of(HANDSHAKE_OPCODE);
-Packet handshake = sendCipher.WriteHeader(handshake.ToArray());
+Packet handshake = sendCipher.WriteHeader(handshake);
 SendPacket(handshake);
 ...
 PacketWriter writer = PacketWriter.Of(OPCODE);
 writer.Write(DATA);
 
-Packet encryptedSendPacket = sendCipher.Transform(writer.ToArray());
-SendPacket(encryptedSendPacket);
+Packet encryptedPacket = sendCipher.Encrypt(writer);
+SendPacket(encryptedPacket);
 ```
 
 Receiving Packets
 ```C#
-var recvCipher = MapleCipher.Decryptor(VERSION, RIV, BLOCK_IV);
+var recvCipher = new MapleCipher.Decryptor(VERSION, RIV, BLOCK_IV);
 MapleStream stream = new MapleStream();
 ...
 while (IS_READING) {
     var data = bytes from network;
     stream.Write(data);
     
-    byte[] packetBuffer = mapleStream.Read();
-    if (packetBuffer != null) {
-        Packet decryptedPacket = recvCipher.Transform(packetBuffer);
+    while (mapleStream.TryRead(out byte[] packetBuffer)) {
+        Packet decryptedPacket = recvCipher.Decrypt(packetBuffer);
         OnPacket(decryptedPacket);
     }
 }
