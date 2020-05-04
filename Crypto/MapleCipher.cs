@@ -1,5 +1,6 @@
 ﻿using MaplePacketLib2.Tools;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 
 namespace MaplePacketLib2.Crypto {
@@ -47,18 +48,18 @@ namespace MaplePacketLib2.Crypto {
             }
 
             public Packet WriteHeader(byte[] packet, int offset, int length) {
-                ushort encSeq = EncodeSeqBase();
+                short encSeq = EncodeSeqBase();
 
                 var writer = new PacketWriter(length + HEADER_SIZE);
-                writer.WriteUShort(encSeq);
+                writer.WriteShort(encSeq);
                 writer.WriteInt(length);
                 writer.WriteBytes(packet, offset, length);
 
                 return writer;
             }
 
-            private ushort EncodeSeqBase() {
-                ushort encSeq = (ushort)(cipher.version ^ (cipher.iv >> 16));
+            private short EncodeSeqBase() {
+                short encSeq = (short)(cipher.version ^ (cipher.iv >> 16));
                 cipher.AdvanceIV();
                 return encSeq;
             }
@@ -88,31 +89,59 @@ namespace MaplePacketLib2.Crypto {
                 decryptSeq = cryptSeq.ToArray();
             }
 
-            public int ReadHeader(PacketReader packet) {
-                ushort encSeq = packet.ReadUShort();
-                ushort decSeq = DecodeSeqBase(encSeq);
-                if (decSeq != cipher.version) {
-                    throw new ArgumentException($"Packet has invalid sequence header: {decSeq}");
-                }
-                int packetSize = packet.ReadInt();
-                if (packet.Length < packetSize + HEADER_SIZE) {
-                    throw new ArgumentException($"Packet has invalid length: {packet.Length}");
-                }
-
-                return packetSize;
-            }
-
-            private ushort DecodeSeqBase(ushort encSeq) {
-                ushort decSeq = (ushort)((cipher.iv >> 16) ^ encSeq);
+            private short DecodeSeqBase(short encSeq) {
+                short decSeq = (short)((cipher.iv >> 16) ^ encSeq);
                 cipher.AdvanceIV();
                 return decSeq;
             }
 
-            public Packet Decrypt(byte[] packet, int offset = 0) {
-                var reader = new PacketReader(packet, offset);
-                int packetSize = ReadHeader(reader);
+            // For use with System.IO.Pipelines
+            // Decrypt packets directly from underlying data stream without needing to buffer
+            public int TryDecrypt(ReadOnlySequence<byte> buffer, out Packet packet) {
+                if (buffer.Length < HEADER_SIZE) {
+                    packet = null;
+                    return 0;
+                }
 
-                packet = reader.Read(packetSize);
+                SequenceReader<byte> reader = new SequenceReader<byte>(buffer);
+                reader.TryReadLittleEndian(out short encSeq);
+                reader.TryReadLittleEndian(out int packetSize);
+                int rawPacketSize = HEADER_SIZE + packetSize;
+                if (buffer.Length < rawPacketSize) {
+                    packet = null;
+                    return 0;
+                }
+
+                // Only decode sequence once we know there is sufficient data because it mutates IV
+                short decSeq = DecodeSeqBase(encSeq);
+                if (decSeq != cipher.version) {
+                    throw new ArgumentException($"Packet has invalid sequence header: {decSeq}");
+                }
+
+                byte[] data = buffer.Slice(HEADER_SIZE, packetSize).ToArray();
+                foreach (ICrypter crypter in decryptSeq) {
+                    crypter.Decrypt(data);
+                }
+
+                packet = new Packet(data);
+                return rawPacketSize;
+            }
+
+            public Packet Decrypt(byte[] rawPacket, int offset = 0) {
+                var reader = new PacketReader(rawPacket, offset);
+
+                short encSeq = reader.ReadShort();
+                short decSeq = DecodeSeqBase(encSeq);
+                if (decSeq != cipher.version) {
+                    throw new ArgumentException($"Packet has invalid sequence header: {decSeq}");
+                }
+
+                int packetSize = reader.ReadInt();
+                if (rawPacket.Length < packetSize + HEADER_SIZE) {
+                    throw new ArgumentException($"Packet has invalid length: {rawPacket.Length}");
+                }
+
+                byte[] packet = reader.Read(packetSize);
                 foreach (ICrypter crypter in decryptSeq) {
                     crypter.Decrypt(packet);
                 }
