@@ -1,4 +1,6 @@
-﻿namespace MaplePacketLib2.Tools {
+﻿using System.Runtime.CompilerServices;
+
+namespace MaplePacketLib2.Tools {
     public class Packet {
         public byte[] Buffer { get; protected set; }
 
@@ -9,14 +11,18 @@
             this.Length = buffer.Length;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public PacketReader Reader() {
-            var pReader = new PacketReader(Buffer) {Length = Length};
-            return pReader;
+            return new PacketReader(Buffer) {Length = Length};
         }
 
-        public byte[] ToArray() {
+        public unsafe byte[] ToArray() {
             byte[] copy = new byte[Length];
-            System.Buffer.BlockCopy(Buffer, 0, copy, 0, Length);
+            fixed (byte* ptr = Buffer)
+            fixed (byte* copyPtr = copy) {
+                Unsafe.CopyBlock(copyPtr, ptr, (uint) Length);
+            }
+
             return copy;
         }
 

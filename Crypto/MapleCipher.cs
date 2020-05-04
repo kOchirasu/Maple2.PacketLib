@@ -141,7 +141,7 @@ namespace MaplePacketLib2.Crypto {
                     throw new ArgumentException($"Packet has invalid length: {rawPacket.Length}");
                 }
 
-                byte[] packet = reader.Read(packetSize);
+                byte[] packet = reader.ReadBytes(packetSize);
                 foreach (ICrypter crypter in decryptSeq) {
                     crypter.Decrypt(packet);
                 }
