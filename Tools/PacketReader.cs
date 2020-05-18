@@ -98,11 +98,15 @@ namespace MaplePacketLib2.Tools {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ReadString() {
-            ushort count = ReadUShort();
-            return ReadRawString(count);
+            ushort length = ReadUShort();
+            return ReadRawString(length);
         }
 
         public string ReadRawString(int length) {
+            if (length == 0) {
+                return string.Empty;
+            }
+
             CheckLength(length);
             fixed (byte* ptr = &Buffer[Position]) {
                 string value = new string((sbyte*) ptr, 0, length, Encoding.UTF8);
@@ -118,6 +122,10 @@ namespace MaplePacketLib2.Tools {
         }
 
         public string ReadRawUnicodeString(int length) {
+            if (length == 0) {
+                return string.Empty;
+            }
+
             CheckLength(length * 2);
             fixed (byte* ptr = &Buffer[Position]) {
                 string value = new string((sbyte*) ptr, 0, length * 2, Encoding.Unicode);
