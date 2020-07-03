@@ -3,17 +3,21 @@ using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace MaplePacketLib2.Tools {
-    public unsafe class PacketReader : Packet {
-        public int Position { get; private set; }
+    public unsafe class ByteReader : IByteReader {
+        public byte[] Buffer { get; }
+        public int Length { get; }
+        public int Position { get; protected set; }
 
         public int Available => Length - Position;
 
-        public PacketReader(byte[] packet, int offset = 0) : base(packet) {
-            this.Position = offset;
+        public ByteReader(byte[] packet, int offset = 0) {
+            Buffer = packet;
+            Length = packet.Length;
+            Position = offset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CheckLength(int length) {
+        protected void CheckLength(int length) {
             int index = Position + length;
             if (index > Length || index < Position) {
                 throw new IndexOutOfRangeException($"Not enough space in packet: {this}\n");
@@ -42,28 +46,19 @@ namespace MaplePacketLib2.Tools {
             return bytes;
         }
 
+        public bool ReadBool() {
+            return ReadByte() != 0;
+        }
+
         public byte ReadByte() {
             CheckLength(1);
             return Buffer[Position++];
-        }
-
-        public bool ReadBool() {
-            return ReadByte() != 0;
         }
 
         public short ReadShort() {
             CheckLength(2);
             fixed (byte* ptr = &Buffer[Position]) {
                 short value = *(short*)ptr;
-                Position += 2;
-                return value;
-            }
-        }
-
-        public ushort ReadUShort() {
-            CheckLength(2);
-            fixed (byte* ptr = &Buffer[Position]) {
-                ushort value = *(ushort*)ptr;
                 Position += 2;
                 return value;
             }
@@ -78,10 +73,10 @@ namespace MaplePacketLib2.Tools {
             }
         }
 
-        public uint ReadUInt() {
+        public float ReadFloat() {
             CheckLength(4);
             fixed (byte* ptr = &Buffer[Position]) {
-                uint value = *(uint*)ptr;
+                float value = *(float*)ptr;
                 Position += 4;
                 return value;
             }
@@ -98,7 +93,7 @@ namespace MaplePacketLib2.Tools {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ReadString() {
-            ushort length = ReadUShort();
+            ushort length = Read<ushort>();
             return ReadRawString(length);
         }
 
@@ -117,7 +112,7 @@ namespace MaplePacketLib2.Tools {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ReadUnicodeString() {
-            ushort length = ReadUShort();
+            ushort length = Read<ushort>();
             return ReadRawUnicodeString(length);
         }
 
@@ -134,10 +129,6 @@ namespace MaplePacketLib2.Tools {
             }
         }
 
-        public string ReadHexString(int length) {
-            return ReadBytes(length).ToHexString(' ');
-        }
-
         public void Skip(int count) {
             int index = Position + count;
             if (index > Length || index < 0) { // Allow backwards seeking
@@ -145,5 +136,11 @@ namespace MaplePacketLib2.Tools {
             }
             Position += count;
         }
+
+        public override string ToString() {
+            return Buffer.ToHexString(Length, ' ');
+        }
+
+        public virtual void Dispose() { }
     }
 }
