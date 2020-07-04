@@ -8,6 +8,8 @@ namespace MaplePacketLib2.Tools {
         public byte[] Buffer { get; protected set; }
         public int Length { get; protected set; }
 
+        public int Remaining => Buffer.Length - Length;
+
         public ByteWriter(int size = DEFAULT_SIZE) : this(new byte[size]) { }
 
         public ByteWriter(byte[] buffer, int offset = 0) {
@@ -15,11 +17,7 @@ namespace MaplePacketLib2.Tools {
             Length = offset;
         }
 
-        public static implicit operator ReadOnlySpan<byte>(ByteWriter writer) {
-            return new ReadOnlySpan<byte>(writer.Buffer, 0, writer.Length);
-        }
-
-        protected virtual void EnsureCapacity(int length) {
+        private void EnsureCapacity(int length) {
             int required = Length + length;
             if (Buffer.Length >= required) {
                 return;
@@ -30,6 +28,10 @@ namespace MaplePacketLib2.Tools {
                 newSize *= 2;
             }
 
+            ResizeBuffer(newSize);
+        }
+
+        public virtual void ResizeBuffer(int newSize) {
             byte[] copy = new byte[newSize];
             fixed (byte* ptr = Buffer)
             fixed (byte* copyPtr = copy) {
@@ -37,6 +39,14 @@ namespace MaplePacketLib2.Tools {
             }
 
             Buffer = copy;
+        }
+
+        public void Seek(int position) {
+            if (position < 0 || position > Buffer.Length) {
+                return;
+            }
+
+            Length = position;
         }
 
         public void Write<T>(in T value) where T : struct {

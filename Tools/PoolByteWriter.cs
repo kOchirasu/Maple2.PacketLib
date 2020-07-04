@@ -8,30 +8,13 @@ namespace MaplePacketLib2.Tools {
         private readonly ArrayPool<byte> pool;
         private bool disposed;
 
-        public int Remaining => Buffer.Length - Length;
-
         public PoolByteWriter(int size = DEFAULT_SIZE, ArrayPool<byte> pool = null)
                 : base((pool ?? ArrayPool<byte>.Shared).Rent(size)) {
             this.pool = pool ?? ArrayPool<byte>.Shared;
             Length = 0;
         }
 
-        protected override void EnsureCapacity(int length) {
-            int required = Length + length;
-            if (Buffer.Length >= required) {
-                return;
-            }
-
-            int newSize = Buffer.Length * 2;
-            while (newSize < required) {
-                newSize *= 2;
-            }
-
-            ResizeBuffer(newSize);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ResizeBuffer(int newSize) {
+        public override void ResizeBuffer(int newSize) {
             if (newSize < Buffer.Length) {
                 throw new ArgumentException("Cannot decrease buffer size.");
             }
@@ -44,14 +27,6 @@ namespace MaplePacketLib2.Tools {
             pool.Return(Buffer);
 
             Buffer = copy;
-        }
-
-        public void Seek(int position) {
-            if (position < 0 || position > Buffer.Length) {
-                return;
-            }
-
-            Length = position;
         }
 
         // Returns a managed array ByteWriter and disposes this instance.
