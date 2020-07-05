@@ -34,6 +34,14 @@ namespace MaplePacketLib2.Tools {
             }
         }
 
+        public T Peek<T>() where T : struct {
+            int size = Unsafe.SizeOf<T>();
+            CheckLength(size);
+            fixed (byte* ptr = &Buffer[Position]) {
+                return Unsafe.Read<T>(ptr);
+            }
+        }
+
         public byte[] ReadBytes(int count) {
             CheckLength(count);
             byte[] bytes = new byte[count];
