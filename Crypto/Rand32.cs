@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MaplePacketLib2.Crypto {
+namespace Maple2.PacketLib.Crypto {
     public class Rand32 {
         private uint s1;
         private uint s2;

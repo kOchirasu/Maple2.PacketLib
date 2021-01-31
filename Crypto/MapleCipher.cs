@@ -1,9 +1,9 @@
-﻿using MaplePacketLib2.Tools;
+﻿using Maple2.PacketLib.Tools;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
 
-namespace MaplePacketLib2.Crypto {
+namespace Maple2.PacketLib.Crypto {
     public class MapleCipher {
         private const int HEADER_SIZE = 6;
 

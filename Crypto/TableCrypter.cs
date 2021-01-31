@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MaplePacketLib2.Crypto {
+namespace Maple2.PacketLib.Crypto {
     public class TableCrypter : ICrypter {
         private const int INDEX = 3;
 

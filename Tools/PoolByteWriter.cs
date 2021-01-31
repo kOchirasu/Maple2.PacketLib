@@ -2,7 +2,7 @@
 using System.Buffers;
 using System.Runtime.CompilerServices;
 
-namespace MaplePacketLib2.Tools {
+namespace Maple2.PacketLib.Tools {
     // ByteWriter backed by ArrayPool. Must Dispose.
     public unsafe class PoolByteWriter : ByteWriter, IDisposable {
         private readonly ArrayPool<byte> pool;

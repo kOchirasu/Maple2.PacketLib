@@ -1,4 +1,4 @@
-﻿namespace MaplePacketLib2.Crypto {
+﻿namespace Maple2.PacketLib.Crypto {
     public class XORCrypter : ICrypter {
         private const int INDEX = 2;
 

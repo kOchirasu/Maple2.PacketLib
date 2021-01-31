@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MaplePacketLib2.Tools {
+namespace Maple2.PacketLib.Tools {
     public interface IByteWriter : IDisposable {
         public void Write<T>(in T value) where T : struct;
         public void WriteBytes(byte[] value);

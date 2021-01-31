@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MaplePacketLib2.Tools {
+namespace Maple2.PacketLib.Tools {
     public static class HexEncoding {
         private static readonly uint[] hexLookup = {
             3145776, 3211312, 3276848, 3342384, 3407920, 3473456, 3538992, 3604528, 3670064, 3735600, 4259888, 4325424,

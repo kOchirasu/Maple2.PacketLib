@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 
-namespace MaplePacketLib2.Tools {
+namespace Maple2.PacketLib.Tools {
     public unsafe class ByteWriter : IByteWriter {
         protected const int DEFAULT_SIZE = 512;
 

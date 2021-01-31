@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MaplePacketLib2.Tools {
+namespace Maple2.PacketLib.Tools {
     public interface IByteReader : IDisposable {
         public int Available { get; }
 

@@ -1,4 +1,4 @@
-﻿namespace MaplePacketLib2.Crypto {
+﻿namespace Maple2.PacketLib.Crypto {
 
     // Left rotates data left by length / 2
     public class RearrangeCrypter : ICrypter {

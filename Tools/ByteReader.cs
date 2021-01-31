@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace MaplePacketLib2.Tools {
+namespace Maple2.PacketLib.Tools {
     public unsafe class ByteReader : IByteReader {
         public byte[] Buffer { get; }
         public int Length { get; }

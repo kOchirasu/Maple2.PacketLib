@@ -1,4 +1,4 @@
-MaplePacketLib2
+Maple2.PacketLib
 ===============
 Packet Library for MapleStory2
 

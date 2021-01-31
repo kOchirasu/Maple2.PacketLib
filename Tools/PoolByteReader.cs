@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Buffers;
 
-namespace MaplePacketLib2.Tools {
+namespace Maple2.PacketLib.Tools {
     // ByteReader backed by ArrayPool. Must Dispose.
     public class PoolByteReader : ByteReader, IDisposable {
         private readonly ArrayPool<byte> pool;

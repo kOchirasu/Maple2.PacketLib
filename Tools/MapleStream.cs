@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MaplePacketLib2.Tools {
+namespace Maple2.PacketLib.Tools {
     // Converts a stream of bytes into individual packets
     public class MapleStream {
         private const int DEFAULT_SIZE = 4096;
