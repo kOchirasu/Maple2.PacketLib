@@ -9,7 +9,7 @@
     <PackageTags>MapleStory2, Packet, Library</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Title>MapleStory2 Packet Library</Title>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

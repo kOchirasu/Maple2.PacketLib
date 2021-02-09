@@ -2,16 +2,16 @@
 
 namespace Maple2.PacketLib.Tools {
     public interface IByteWriter : IDisposable {
-        public void Write<T>(in T value) where T : struct;
-        public void WriteBytes(byte[] value);
-        public void WriteBytes(byte[] value, int offset, int length);
-        public void WriteBool(bool value);
-        public void WriteByte(byte value = 0);
-        public void WriteShort(short value = 0);
-        public void WriteInt(int value = 0);
-        public void WriteFloat(float value = 0f);
-        public void WriteLong(long value = 0);
-        public void WriteString(string value = "");
-        public void WriteUnicodeString(string value = "");
+        void Write<T>(in T value) where T : struct;
+        void WriteBytes(byte[] value);
+        void WriteBytes(byte[] value, int offset, int length);
+        void WriteBool(bool value);
+        void WriteByte(byte value = 0);
+        void WriteShort(short value = 0);
+        void WriteInt(int value = 0);
+        void WriteFloat(float value = 0f);
+        void WriteLong(long value = 0);
+        void WriteString(string value = "");
+        void WriteUnicodeString(string value = "");
     }
 }
