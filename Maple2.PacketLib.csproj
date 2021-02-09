@@ -1,6 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <Authors>Ochirasu</Authors>
+    <Description>Packet library to encrypt and decrypt packets for MapleStory2. Also provides utils for packet reading and writing.</Description>
+    <PackageLicenseUrl>https://www.gnu.org/licenses/gpl-3.0.en.html</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/kOchirasu/Maple2.PacketLib</RepositoryUrl>
+    <RepositoryType>github</RepositoryType>
+    <PackageTags>MapleStory2, Packet, Library</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Title>MapleStory2 Packet Library</Title>
     <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
