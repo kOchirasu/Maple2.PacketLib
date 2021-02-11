@@ -43,6 +43,10 @@ namespace Maple2.PacketLib.Tools {
         }
 
         public byte[] ReadBytes(int count) {
+            if (count == 0) {
+                return new byte[0];
+            }
+
             CheckLength(count);
             byte[] bytes = new byte[count];
             fixed (byte* ptr = &Buffer[Position])
