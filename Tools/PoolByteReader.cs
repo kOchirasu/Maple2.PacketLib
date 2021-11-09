@@ -6,8 +6,10 @@ namespace Maple2.PacketLib.Tools {
     public class PoolByteReader : ByteReader, IDisposable {
         private readonly ArrayPool<byte> pool;
 
-        public PoolByteReader(ArrayPool<byte> pool, byte[] packet, int offset = 0) : base(packet, offset) {
+        public PoolByteReader(ArrayPool<byte> pool, byte[] packet, int length, int offset = 0) : base(packet, offset) {
             this.pool = pool;
+            // ArrayPool can return an array of greater length than needed.
+            this.Length = length;
         }
 
         public new void Dispose() {

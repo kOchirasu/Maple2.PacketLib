@@ -5,7 +5,7 @@ using System.Text;
 namespace Maple2.PacketLib.Tools {
     public unsafe class ByteReader : IByteReader {
         public byte[] Buffer { get; }
-        public int Length { get; }
+        public int Length { get; protected set; }
         public int Position { get; protected set; }
 
         public int Available => Length - Position;

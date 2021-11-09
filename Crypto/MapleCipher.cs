@@ -126,7 +126,7 @@ namespace Maple2.PacketLib.Crypto {
                     crypter.Decrypt(data, 0, packetSize);
                 }
 
-                packet = new PoolByteReader(ArrayProvider, data);
+                packet = new PoolByteReader(ArrayProvider, data, packetSize);
                 return rawPacketSize;
             }
 
