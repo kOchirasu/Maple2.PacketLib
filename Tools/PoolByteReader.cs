@@ -3,8 +3,9 @@ using System.Buffers;
 
 namespace Maple2.PacketLib.Tools {
     // ByteReader backed by ArrayPool. Must Dispose.
-    public class PoolByteReader : ByteReader, IDisposable {
+    public sealed class PoolByteReader : ByteReader, IDisposable {
         private readonly ArrayPool<byte> pool;
+        private bool disposed;
 
         public PoolByteReader(ArrayPool<byte> pool, byte[] packet, int length, int offset = 0) : base(packet, offset) {
             this.pool = pool;
@@ -12,19 +13,20 @@ namespace Maple2.PacketLib.Tools {
             this.Length = length;
         }
 
+        ~PoolByteReader() => Dispose(false);
+
         public new void Dispose() {
-            pool.Return(Buffer);
-#if DEBUG
-            // In DEBUG, SuppressFinalize to mark object as disposed.
+            Dispose(true);
             GC.SuppressFinalize(this);
-#endif
         }
 
-#if DEBUG
-        // Provides warning if Disposed in not called.
-        ~PoolByteReader() {
-            System.Diagnostics.Debug.Fail($"PacketReader not disposed: {this}");
+        private void Dispose(bool disposing) {
+            if (disposed) {
+                return;
+            }
+
+            pool.Return(Buffer);
+            disposed = true;
         }
-#endif
     }
 }

@@ -44,7 +44,7 @@ namespace Maple2.PacketLib.Tools {
 
         public byte[] ReadBytes(int count) {
             if (count == 0) {
-	        return new byte[0];
+	        return Array.Empty<byte>();
             }
 
             CheckLength(count);

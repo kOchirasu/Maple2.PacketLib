@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Maple2.PacketLib.Tools {
     // ByteWriter backed by ArrayPool. Must Dispose.
-    public unsafe class PoolByteWriter : ByteWriter, IDisposable {
+    public sealed unsafe class PoolByteWriter : ByteWriter, IDisposable {
         private readonly ArrayPool<byte> pool;
         private bool disposed;
 
@@ -13,6 +13,8 @@ namespace Maple2.PacketLib.Tools {
             this.pool = pool ?? ArrayPool<byte>.Shared;
             Length = 0;
         }
+
+        ~PoolByteWriter() => Dispose(false);
 
         public override void ResizeBuffer(int newSize) {
             if (newSize < Buffer.Length) {
@@ -32,26 +34,22 @@ namespace Maple2.PacketLib.Tools {
         // Returns a managed array ByteWriter and disposes this instance.
         public ByteWriter Managed() {
             var writer = new ByteWriter(ToArray(), Length);
-            Dispose();
+            Dispose(true);
             return writer;
         }
 
         public new void Dispose() {
-            if (!disposed) {
-                disposed = true;
-                pool.Return(Buffer);
-            }
-#if DEBUG
-            // In DEBUG, SuppressFinalize to mark object as disposed.
+            Dispose(true);
             GC.SuppressFinalize(this);
-#endif
         }
 
-#if DEBUG
-        // Provides warning if Disposed in not called.
-        ~PoolByteWriter() {
-            System.Diagnostics.Debug.Fail($"PacketWriter not disposed: {this}");
+        private void Dispose(bool disposing) {
+            if (disposed) {
+                return;
+            }
+
+            pool.Return(Buffer);
+            disposed = true;
         }
-#endif
     }
 }
