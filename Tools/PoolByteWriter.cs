@@ -4,11 +4,11 @@ using System.Runtime.CompilerServices;
 
 namespace Maple2.PacketLib.Tools {
     // ByteWriter backed by ArrayPool. Must Dispose.
-    public sealed unsafe class PoolByteWriter : ByteWriter, IDisposable {
+    public sealed unsafe class PoolByteWriter : ByteWriter {
         private readonly ArrayPool<byte> pool;
         private bool disposed;
 
-        public PoolByteWriter(int size = DEFAULT_SIZE, ArrayPool<byte> pool = null)
+        public PoolByteWriter(int size = DEFAULT_SIZE, ArrayPool<byte>? pool = null)
                 : base((pool ?? ArrayPool<byte>.Shared).Rent(size)) {
             this.pool = pool ?? ArrayPool<byte>.Shared;
             Length = 0;
@@ -38,18 +38,13 @@ namespace Maple2.PacketLib.Tools {
             return writer;
         }
 
-        public new void Dispose() {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing) {
+        public override void Dispose(bool disposing) {
             if (disposed) {
                 return;
             }
 
-            pool.Return(Buffer);
             disposed = true;
+            pool.Return(Buffer);
         }
     }
 }

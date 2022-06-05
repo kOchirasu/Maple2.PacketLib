@@ -44,7 +44,7 @@ namespace Maple2.PacketLib.Tools {
 
         public byte[] ReadBytes(int count) {
             if (count == 0) {
-	        return Array.Empty<byte>();
+	            return Array.Empty<byte>();
             }
 
             CheckLength(count);
@@ -153,6 +153,11 @@ namespace Maple2.PacketLib.Tools {
             return Buffer.ToHexString(Length, ' ');
         }
 
-        public virtual void Dispose() { }
+        public virtual void Dispose(bool disposing) { }
+
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

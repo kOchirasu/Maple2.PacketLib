@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Maple2.PacketLib.Tools {
     // Converts a stream of bytes into individual packets
@@ -27,7 +28,7 @@ namespace Maple2.PacketLib.Tools {
             cursor += length;
         }
 
-        public bool TryRead(out byte[] packet) {
+        public bool TryRead([NotNullWhen(true)] out byte[]? packet) {
             if (cursor < HEADER_SIZE) {
                 packet = null;
                 return false;

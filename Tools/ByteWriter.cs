@@ -64,6 +64,10 @@ namespace Maple2.PacketLib.Tools {
         }
 
         public void WriteBytes(byte[] value, int offset, int length) {
+            if (length == 0) {
+                return;
+            }
+
             EnsureCapacity(length);
             fixed (byte* ptr = &Buffer[Length])
             fixed (byte* valuePtr = value) {
@@ -123,6 +127,10 @@ namespace Maple2.PacketLib.Tools {
         // Note: char and string are UTF-16 in C#
         public void WriteRawString(string value) {
             int length = value.Length;
+            if (length == 0) {
+                return;
+            }
+
             EnsureCapacity(length);
             fixed (char* valuePtr = value) {
                 for (int i = 0; i < length; i++) {
@@ -139,6 +147,10 @@ namespace Maple2.PacketLib.Tools {
 
         public void WriteRawUnicodeString(string value) {
             int length = value.Length * 2;
+            if (length == 0) {
+                return;
+            }
+
             EnsureCapacity(length);
             fixed (byte* ptr = &Buffer[Length])
             fixed (char* valuePtr = value) {
@@ -161,6 +173,11 @@ namespace Maple2.PacketLib.Tools {
             return Buffer.ToHexString(Length, ' ');
         }
 
-        public virtual void Dispose() { }
+        public virtual void Dispose(bool disposing) { }
+
+        public void Dispose() {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

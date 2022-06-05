@@ -1,9 +1,8 @@
-﻿using System;
-using System.Buffers;
+﻿using System.Buffers;
 
 namespace Maple2.PacketLib.Tools {
     // ByteReader backed by ArrayPool. Must Dispose.
-    public sealed class PoolByteReader : ByteReader, IDisposable {
+    public sealed class PoolByteReader : ByteReader {
         private readonly ArrayPool<byte> pool;
         private bool disposed;
 
@@ -15,18 +14,13 @@ namespace Maple2.PacketLib.Tools {
 
         ~PoolByteReader() => Dispose(false);
 
-        public new void Dispose() {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing) {
+        public override void Dispose(bool disposing) {
             if (disposed) {
                 return;
             }
 
-            pool.Return(Buffer);
             disposed = true;
+            pool.Return(Buffer);
         }
     }
 }
