@@ -14,10 +14,10 @@ namespace Maple2.PacketLib.Tools {
         public void WriteInt(int value = 0);
         public void WriteFloat(float value = 0f);
         public void WriteLong(long value = 0);
-        public void WriteString(string value = "");
+        public void WriteString(string? value = "");
         public void WriteString(scoped ReadOnlySpan<char> value);
         public void WriteRawString(scoped ReadOnlySpan<char> value);
-        public void WriteUnicodeString(string value = "");
+        public void WriteUnicodeString(string? value = "");
         public void WriteUnicodeString(scoped ReadOnlySpan<char> value);
         public void WriteRawUnicodeString(scoped ReadOnlySpan<char> value);
         public byte[] ToArray();

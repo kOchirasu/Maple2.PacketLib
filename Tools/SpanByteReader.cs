@@ -6,12 +6,22 @@ using System.Text;
 
 namespace Maple2.PacketLib.Tools {
     public ref struct SpanByteReader : IByteReader {
+        private int position;
+
         public ReadOnlySpan<byte> Span { get; }
-        public int Position { readonly get; private set; }
+        public int Position {
+            readonly get => position;
+            set {
+                if ((uint)value > (uint)Span.Length) {
+                    throw new IndexOutOfRangeException($"Not enough space in packet: {ToString()}\n");
+                }
+                position = value;
+            }
+        }
 
         public readonly int Length => Span.Length;
-        public readonly int Available => Span.Length - Position;
-        public readonly ReadOnlySpan<byte> RemainingSpan => Span.Slice(Position);
+        public readonly int Available => Span.Length - position;
+        public readonly ReadOnlySpan<byte> RemainingSpan => Span.Slice(position);
 
         public SpanByteReader(ReadOnlySpan<byte> packet, int offset = 0) {
             if ((uint)offset > (uint)packet.Length) {
@@ -19,12 +29,12 @@ namespace Maple2.PacketLib.Tools {
             }
 
             Span = packet;
-            Position = offset;
+            position = offset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private readonly void CheckLength(int length) {
-            if ((uint)length > (uint)(Span.Length - Position)) {
+            if ((uint)length > (uint)(Span.Length - position)) {
                 throw new IndexOutOfRangeException($"Not enough space in packet: {ToString()}\n");
             }
         }
@@ -40,14 +50,14 @@ namespace Maple2.PacketLib.Tools {
         public readonly T Peek<T>() where T : struct {
             int size = Unsafe.SizeOf<T>();
             CheckLength(size);
-            return Unsafe.ReadUnaligned<T>(ref MemoryMarshal.GetReference(Span.Slice(Position, size)));
+            return Unsafe.ReadUnaligned<T>(ref MemoryMarshal.GetReference(Span.Slice(position, size)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ReadOnlySpan<byte> ReadSpan(int count) {
             CheckLength(count);
-            ReadOnlySpan<byte> slice = Span.Slice(Position, count);
-            Position += count;
+            ReadOnlySpan<byte> slice = Span.Slice(position, count);
+            position += count;
             return slice;
         }
 
@@ -72,7 +82,7 @@ namespace Maple2.PacketLib.Tools {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte ReadByte() {
             CheckLength(1);
-            return Span[Position++];
+            return Span[position++];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -127,7 +137,7 @@ namespace Maple2.PacketLib.Tools {
                 return string.Empty;
             }
 
-            if ((uint)length > (uint)((Span.Length - Position) >> 1)) {
+            if ((uint)length > (uint)((Span.Length - position) >> 1)) {
                 throw new IndexOutOfRangeException($"Not enough space in packet: {ToString()}\n");
             }
 
@@ -140,11 +150,11 @@ namespace Maple2.PacketLib.Tools {
         }
 
         public void Skip(int count) {
-            int index = Position + count;
+            int index = position + count;
             if ((uint)index > (uint)Span.Length) { // Allow backwards seeking
                 throw new IndexOutOfRangeException($"Not enough space in packet: {ToString()}\n");
             }
-            Position = index;
+            position = index;
         }
 
         public readonly override string ToString() {

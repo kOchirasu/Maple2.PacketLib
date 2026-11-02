@@ -118,7 +118,7 @@ namespace Maple2.PacketLib.Tools {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteString(string value = "") {
+        public void WriteString(string? value = "") {
             WriteString(value.AsSpan());
         }
 
@@ -129,7 +129,7 @@ namespace Maple2.PacketLib.Tools {
         }
 
         // Note: char and string are UTF-16 in C#
-        public void WriteRawString(string value) {
+        public void WriteRawString(string? value) {
             WriteRawString(value.AsSpan());
         }
 
@@ -146,7 +146,7 @@ namespace Maple2.PacketLib.Tools {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteUnicodeString(string value = "") {
+        public void WriteUnicodeString(string? value = "") {
             WriteUnicodeString(value.AsSpan());
         }
 
@@ -156,7 +156,7 @@ namespace Maple2.PacketLib.Tools {
             WriteRawUnicodeString(value);
         }
 
-        public void WriteRawUnicodeString(string value) {
+        public void WriteRawUnicodeString(string? value) {
             WriteRawUnicodeString(value.AsSpan());
         }
 
