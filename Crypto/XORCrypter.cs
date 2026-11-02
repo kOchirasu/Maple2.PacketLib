@@ -1,4 +1,6 @@
-﻿namespace Maple2.PacketLib.Crypto {
+using System;
+
+namespace Maple2.PacketLib.Crypto {
     public class XORCrypter : ICrypter {
         private const int INDEX = 2;
 
@@ -20,21 +22,29 @@
         }
 
         public void Encrypt(byte[] src) {
-            Encrypt(src, 0, src.Length);
+            Encrypt(src.AsSpan());
         }
 
         public void Encrypt(byte[] src, int start, int end) {
-            for (int i = start; i < end; i++) {
+            Encrypt(src.AsSpan(start, end - start));
+        }
+
+        public void Encrypt(Span<byte> src) {
+            for (int i = 0; i < src.Length; i++) {
                 src[i] ^= table[i & 1];
             }
         }
 
         public void Decrypt(byte[] src) {
-            Decrypt(src, 0, src.Length);
+            Decrypt(src.AsSpan());
         }
 
         public void Decrypt(byte[] src, int start, int end) {
-            for (int i = start; i < end; i++) {
+            Decrypt(src.AsSpan(start, end - start));
+        }
+
+        public void Decrypt(Span<byte> src) {
+            for (int i = 0; i < src.Length; i++) {
                 src[i] ^= table[i & 1];
             }
         }

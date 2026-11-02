@@ -1,20 +1,26 @@
-﻿using System;
+using Maple2.PacketLib.Crypto;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Maple2.PacketLib.Tools {
     // Converts a stream of bytes into individual packets
     public class MapleStream {
         private const int DEFAULT_SIZE = 4096;
-        private const int HEADER_SIZE = 6;
+        private const int HEADER_SIZE = MapleCipher.HEADER_SIZE;
 
         private byte[] buffer = new byte[DEFAULT_SIZE];
         private int cursor;
 
         public void Write(byte[] packet) {
-            Write(packet, 0, packet.Length);
+            Write(packet.AsSpan());
         }
 
         public void Write(byte[] packet, int offset, int length) {
+            Write(packet.AsSpan(offset, length));
+        }
+
+        public void Write(ReadOnlySpan<byte> packet) {
+            int length = packet.Length;
             if (buffer.Length - cursor < length) {
                 int newSize = buffer.Length * 2;
                 while (newSize < cursor + length) {
@@ -24,7 +30,7 @@ namespace Maple2.PacketLib.Tools {
                 Buffer.BlockCopy(buffer, 0, newBuffer, 0, cursor);
                 buffer = newBuffer;
             }
-            Buffer.BlockCopy(packet, offset, buffer, cursor, length);
+            packet.CopyTo(buffer.AsSpan(cursor, length));
             cursor += length;
         }
 
@@ -35,6 +41,10 @@ namespace Maple2.PacketLib.Tools {
             }
 
             int packetSize = BitConverter.ToInt32(buffer, 2);
+            if ((uint)packetSize > (uint)MapleCipher.MaxPacketSize) {
+                throw new ArgumentException($"Packet has invalid length: {packetSize}");
+            }
+
             int bufferSize = HEADER_SIZE + packetSize;
             if (cursor < bufferSize) {
                 packet = null;

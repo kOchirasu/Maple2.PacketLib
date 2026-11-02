@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Maple2.PacketLib.Tools {
     public static class HexEncoding {
@@ -78,6 +78,19 @@ namespace Maple2.PacketLib.Tools {
             }
         }
 
+        public static unsafe string ToHexString(this ReadOnlySpan<byte> bytes) {
+            if (bytes.IsEmpty) {
+                return string.Empty;
+            }
+            fixed (byte* bytesPtr = bytes) {
+                return ToHexString(bytesPtr, bytes.Length);
+            }
+        }
+
+        public static string ToHexString(this Span<byte> bytes) {
+            return ((ReadOnlySpan<byte>)bytes).ToHexString();
+        }
+
         public static unsafe string ToHexString(byte* bytes, int length) {
             string result = new string('\0', length * 2);
             fixed (char* resultPtr = result)
@@ -92,6 +105,19 @@ namespace Maple2.PacketLib.Tools {
 
         public static string ToHexString(this byte[] bytes, char sep) {
             return ToHexString(bytes, bytes.Length, sep);
+        }
+
+        public static unsafe string ToHexString(this ReadOnlySpan<byte> bytes, char sep) {
+            if (bytes.IsEmpty) {
+                return string.Empty;
+            }
+            fixed (byte* bytesPtr = bytes) {
+                return ToHexString(bytesPtr, bytes.Length, sep);
+            }
+        }
+
+        public static string ToHexString(this Span<byte> bytes, char sep) {
+            return ((ReadOnlySpan<byte>)bytes).ToHexString(sep);
         }
 
         public static unsafe string ToHexString(this byte[] bytes, int length, char sep) {

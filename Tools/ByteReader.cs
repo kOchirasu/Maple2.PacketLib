@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Maple2.PacketLib.Tools {
@@ -17,45 +18,46 @@ namespace Maple2.PacketLib.Tools {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public SpanByteReader AsSpanReader() {
+            return new SpanByteReader(Buffer.AsSpan(Position, Available));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void CheckLength(int length) {
-            int index = Position + length;
-            if (index > Length || index < Position) {
+            if ((uint)length > (uint)(Length - Position)) {
                 throw new IndexOutOfRangeException($"Not enough space in packet: {this}\n");
             }
         }
 
         public T Read<T>() where T : struct {
             int size = Unsafe.SizeOf<T>();
-            CheckLength(size);
-            fixed (byte* ptr = &Buffer[Position]) {
-                var value = Unsafe.Read<T>(ptr);
-                Position += size;
-                return value;
-            }
+            ReadOnlySpan<byte> slice = ReadSpan(size);
+            return Unsafe.ReadUnaligned<T>(ref MemoryMarshal.GetReference(slice));
         }
 
         public T Peek<T>() where T : struct {
             int size = Unsafe.SizeOf<T>();
             CheckLength(size);
-            fixed (byte* ptr = &Buffer[Position]) {
-                return Unsafe.Read<T>(ptr);
-            }
+            return Unsafe.ReadUnaligned<T>(ref MemoryMarshal.GetReference(Buffer.AsSpan(Position, size)));
+        }
+
+        public ReadOnlySpan<byte> ReadSpan(int count) {
+            CheckLength(count);
+            ReadOnlySpan<byte> slice = Buffer.AsSpan(Position, count);
+            Position += count;
+            return slice;
+        }
+
+        public void ReadBytes(scoped Span<byte> destination) {
+            ReadSpan(destination.Length).CopyTo(destination);
         }
 
         public byte[] ReadBytes(int count) {
             if (count == 0) {
-	            return Array.Empty<byte>();
+                return Array.Empty<byte>();
             }
 
-            CheckLength(count);
-            byte[] bytes = new byte[count];
-            fixed (byte* ptr = &Buffer[Position])
-            fixed (byte* bytesPtr = bytes){
-                Unsafe.CopyBlock(bytesPtr, ptr, (uint)count);
-            }
-
-            Position += count;
-            return bytes;
+            return ReadSpan(count).ToArray();
         }
 
         public bool ReadBool() {
@@ -115,11 +117,15 @@ namespace Maple2.PacketLib.Tools {
             }
 
             CheckLength(length);
-            fixed (byte* ptr = &Buffer[Position]) {
-                string value = new string((sbyte*) ptr, 0, length, Encoding.UTF8);
-                Position += length;
-                return value;
+            string value = new string('\0', length);
+            fixed (byte* ptr = &Buffer[Position])
+            fixed (char* dst = value) {
+                for (int i = 0; i < length; i++) {
+                    dst[i] = (char)ptr[i];
+                }
             }
+            Position += length;
+            return value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -133,20 +139,24 @@ namespace Maple2.PacketLib.Tools {
                 return string.Empty;
             }
 
-            CheckLength(length * 2);
+            if ((uint)length > (uint)((Length - Position) >> 1)) {
+                throw new IndexOutOfRangeException($"Not enough space in packet: {this}\n");
+            }
+
+            int byteCount = length * 2;
             fixed (byte* ptr = &Buffer[Position]) {
-                string value = new string((sbyte*) ptr, 0, length * 2, Encoding.Unicode);
-                Position += length * 2;
+                string value = new string((sbyte*)ptr, 0, byteCount, Encoding.Unicode);
+                Position += byteCount;
                 return value;
             }
         }
 
         public void Skip(int count) {
             int index = Position + count;
-            if (index > Length || index < 0) { // Allow backwards seeking
+            if ((uint)index > (uint)Length) { // Allow backwards seeking
                 throw new IndexOutOfRangeException($"Not enough space in packet: {this}\n");
             }
-            Position += count;
+            Position = index;
         }
 
         public override string ToString() {

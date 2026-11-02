@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Maple2.PacketLib.Crypto {
     public class TableCrypter : ICrypter {
@@ -28,33 +28,39 @@ namespace Maple2.PacketLib.Crypto {
         }
 
         public void Encrypt(byte[] src) {
-            Encrypt(src, 0, src.Length);
+            Encrypt(src.AsSpan());
         }
 
         public void Encrypt(byte[] src, int start, int end) {
-            for (int i = start; i < end; i++) {
+            Encrypt(src.AsSpan(start, end - start));
+        }
+
+        public void Encrypt(Span<byte> src) {
+            for (int i = 0; i < src.Length; i++) {
                 src[i] = encrypted[src[i]];
             }
         }
 
         public void Decrypt(byte[] src) {
-            Decrypt(src, 0, src.Length);
+            Decrypt(src.AsSpan());
         }
 
         public void Decrypt(byte[] src, int start, int end) {
-            for (int i = start; i < end; i++) {
+            Decrypt(src.AsSpan(start, end - start));
+        }
+
+        public void Decrypt(Span<byte> src) {
+            for (int i = 0; i < src.Length; i++) {
                 src[i] = decrypted[src[i]];
             }
         }
 
         private static void Shuffle(byte[] data, uint version) {
-            var rand32 = new Rand32((uint)Math.Pow(version, 2));
+            var rand32 = new Rand32(version * version);
             for (int i = TABLE_SIZE - 1; i >= 1; i--) {
                 byte rand = (byte)(rand32.Random() % (i + 1));
 
-                byte swap = data[i];
-                data[i] = data[rand];
-                data[rand] = swap;
+                (data[i], data[rand]) = (data[rand], data[i]);
             }
         }
     }

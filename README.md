@@ -34,9 +34,32 @@ while (IS_READING) {
     var data = bytes from network;
     stream.Write(data);
     
-    while (mapleStream.TryRead(out byte[] packetBuffer)) {
-        Packet decryptedPacket = recvCipher.Decrypt(packetBuffer);
+    while (stream.TryRead(out byte[]? packetBuffer)) {
+        ByteReader decryptedPacket = recvCipher.Decrypt(packetBuffer);
         OnPacket(decryptedPacket);
     }
 }
+```
+
+Client Handshake & Zero-Allocation `ref struct` Usage (`SpanByteReader` / `SpanByteWriter`)
+```C#
+// 1. Read unencrypted server handshake frame
+SpanByteReader handshake = MapleCipher.ReadHeaderSpan(rawHandshakeFrame, out short encSeq);
+ushort opcode = handshake.Read<ushort>();
+uint version = handshake.Read<uint>();
+uint sendIv = handshake.Read<uint>();
+uint recvIv = handshake.Read<uint>();
+uint blockIv = handshake.Read<uint>();
+
+var sendCipher = new MapleCipher.Encryptor(version, sendIv, blockIv);
+var recvCipher = MapleCipher.Decryptor.CreateClient(version, recvIv, blockIv);
+
+// 2. Write & encrypt without heap allocations
+using var writer = new SpanByteWriter(stackalloc byte[128], ArrayPool<byte>.Shared);
+writer.Write<ushort>(OPCODE);
+writer.Write(DATA);
+sendCipher.Encrypt(writer, pipeWriter);
+
+// 3. Decrypt in-place into a stack-only SpanByteReader
+SpanByteReader packet = recvCipher.DecryptInPlace(rawPacketSpan);
 ```

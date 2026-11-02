@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Maple2.PacketLib.Tools {
     public unsafe class ByteWriter : IByteWriter {
@@ -9,6 +11,8 @@ namespace Maple2.PacketLib.Tools {
         public int Length { get; protected set; }
 
         public int Remaining => Buffer.Length - Length;
+
+        public ReadOnlySpan<byte> WrittenSpan => Buffer.AsSpan(0, Length);
 
         public ByteWriter(int size = DEFAULT_SIZE) : this(new byte[size]) { }
 
@@ -23,7 +27,7 @@ namespace Maple2.PacketLib.Tools {
                 return;
             }
 
-            int newSize = Buffer.Length * 2;
+            int newSize = Math.Max(Buffer.Length * 2, DEFAULT_SIZE);
             while (newSize < required) {
                 newSize *= 2;
             }
@@ -33,11 +37,7 @@ namespace Maple2.PacketLib.Tools {
 
         public virtual void ResizeBuffer(int newSize) {
             byte[] copy = new byte[newSize];
-            fixed (byte* ptr = Buffer)
-            fixed (byte* copyPtr = copy) {
-                Unsafe.CopyBlock(copyPtr, ptr, (uint) Length);
-            }
-
+            Buffer.AsSpan(0, Length).CopyTo(copy);
             Buffer = copy;
         }
 
@@ -49,31 +49,30 @@ namespace Maple2.PacketLib.Tools {
             Length = position;
         }
 
-        public void Write<T>(in T value) where T : struct {
+        public void Write<T>(scoped in T value) where T : struct {
             int size = Unsafe.SizeOf<T>();
             EnsureCapacity(size);
-            fixed (byte* ptr = &Buffer[Length]) {
-                Unsafe.Write<T>(ptr, value);
-                Length += size;
-            }
+            Unsafe.WriteUnaligned(ref MemoryMarshal.GetReference(Buffer.AsSpan(Length, size)), value);
+            Length += size;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteBytes(byte[] value) {
-            WriteBytes(value, 0, value.Length);
+            WriteBytes(value.AsSpan());
         }
 
         public void WriteBytes(byte[] value, int offset, int length) {
-            if (length == 0) {
+            WriteBytes(value.AsSpan(offset, length));
+        }
+
+        public void WriteBytes(scoped ReadOnlySpan<byte> value) {
+            if (value.IsEmpty) {
                 return;
             }
 
-            EnsureCapacity(length);
-            fixed (byte* ptr = &Buffer[Length])
-            fixed (byte* valuePtr = value) {
-                Unsafe.CopyBlock(ptr, valuePtr + offset, (uint)length);
-                Length += length;
-            }
+            EnsureCapacity(value.Length);
+            value.CopyTo(Buffer.AsSpan(Length, value.Length));
+            Length += value.Length;
         }
 
         public void WriteBool(bool value) {
@@ -120,53 +119,64 @@ namespace Maple2.PacketLib.Tools {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteString(string value = "") {
+            WriteString(value.AsSpan());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteString(scoped ReadOnlySpan<char> value) {
             Write<ushort>((ushort)value.Length);
             WriteRawString(value);
         }
 
         // Note: char and string are UTF-16 in C#
         public void WriteRawString(string value) {
+            WriteRawString(value.AsSpan());
+        }
+
+        public void WriteRawString(scoped ReadOnlySpan<char> value) {
             int length = value.Length;
             if (length == 0) {
                 return;
             }
 
             EnsureCapacity(length);
-            fixed (char* valuePtr = value) {
-                for (int i = 0; i < length; i++) {
-                    Buffer[Length++] = (byte) *(valuePtr + i);
-                }
+            for (int i = 0; i < length; i++) {
+                Buffer[Length++] = (byte)value[i];
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteUnicodeString(string value = "") {
+            WriteUnicodeString(value.AsSpan());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteUnicodeString(scoped ReadOnlySpan<char> value) {
             Write<ushort>((ushort)value.Length);
             WriteRawUnicodeString(value);
         }
 
         public void WriteRawUnicodeString(string value) {
-            int length = value.Length * 2;
-            if (length == 0) {
+            WriteRawUnicodeString(value.AsSpan());
+        }
+
+        public void WriteRawUnicodeString(scoped ReadOnlySpan<char> value) {
+            if (value.IsEmpty) {
                 return;
             }
 
-            EnsureCapacity(length);
-            fixed (byte* ptr = &Buffer[Length])
-            fixed (char* valuePtr = value) {
-                Unsafe.CopyBlock(ptr, valuePtr, (uint)length);
-                Length += length;
+            int byteCount = value.Length * 2;
+            EnsureCapacity(byteCount);
+            if (BitConverter.IsLittleEndian) {
+                MemoryMarshal.AsBytes(value).CopyTo(Buffer.AsSpan(Length, byteCount));
+            } else {
+                Encoding.Unicode.GetBytes(value, Buffer.AsSpan(Length, byteCount));
             }
+            Length += byteCount;
         }
 
         public byte[] ToArray() {
-            byte[] copy = new byte[Length];
-            fixed (byte* ptr = Buffer)
-            fixed (byte* copyPtr = copy) {
-                Unsafe.CopyBlock(copyPtr, ptr, (uint) Length);
-            }
-
-            return copy;
+            return Buffer.AsSpan(0, Length).ToArray();
         }
 
         public override string ToString() {

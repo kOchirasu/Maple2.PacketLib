@@ -1,4 +1,6 @@
-﻿namespace Maple2.PacketLib.Crypto {
+using System;
+
+namespace Maple2.PacketLib.Crypto {
 
     // Left rotates data left by length / 2
     public class RearrangeCrypter : ICrypter {
@@ -9,40 +11,32 @@
         }
 
         public void Encrypt(byte[] src) {
-            int len = src.Length >> 1;
-            for (int i = 0; i < len; i++) {
-                byte swap = src[i];
-                src[i] = src[i + len];
-                src[i + len] = swap;
-            }
+            Encrypt(src.AsSpan());
         }
 
         public void Encrypt(byte[] src, int start, int end) {
-            int len = (end - start) >> 1;
-            int max = start + len;
-            for (int i = start; i < max; i++) {
-                byte swap = src[i];
-                src[i] = src[i + len];
-                src[i + len] = swap;
+            Encrypt(src.AsSpan(start, end - start));
+        }
+
+        public void Encrypt(Span<byte> src) {
+            int len = src.Length >> 1;
+            for (int i = 0; i < len; i++) {
+                (src[i], src[i + len]) = (src[i + len], src[i]);
             }
         }
 
         public void Decrypt(byte[] src) {
-            int len = src.Length >> 1;
-            for (int i = 0; i < len; i++) {
-                byte swap = src[i];
-                src[i] = src[i + len];
-                src[i + len] = swap;
-            }
+            Decrypt(src.AsSpan());
         }
 
         public void Decrypt(byte[] src, int start, int end) {
-            int len = (end - start) >> 1;
-            int max = start + len;
-            for (int i = start; i < max; i++) {
-                byte swap = src[i];
-                src[i] = src[i + len];
-                src[i + len] = swap;
+            Decrypt(src.AsSpan(start, end - start));
+        }
+
+        public void Decrypt(Span<byte> src) {
+            int len = src.Length >> 1;
+            for (int i = 0; i < len; i++) {
+                (src[i], src[i + len]) = (src[i + len], src[i]);
             }
         }
     }
